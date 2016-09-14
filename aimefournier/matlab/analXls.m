@@ -1,31 +1,31 @@
 
-% Author: Aimé Fournier
+% Author:	Aim� Fournier
+% File:		analXls.m
+% Purpose:	Analyze .xlsx spreadsheets
 
  clear
 %
-% The intention is to run this script section-by-section (between %%) from the Matlab editor;
-% however, it may work simply from the command line too.
+% The intention is to run this script section-by-section (between %%) from
+% the Matlab editor using the Command-Enter keystroke;
+% however, it may work simply from the Matlab command window too.
+% It will display what it is doing.
 %
 % A few lines may need to be edited for customized use:
 %
- cd ~/research/UCD/FASMEE/		% directory of spreadsheet files
+ wd = '~/research/UCD/FASMEE/fasmee/aimefournier/matlab/';
+ cd(wd)			 		% directory of scripts
  matF = fullfile('mat','analXls.mat');	% .mat file name
- if exist(matF, 'file')			% spreadsheet processing already done
-    tic
-    fprintf('Loading %s takes ',matF)
-    load(matF)
-    fprintf('%5.1fs\n',toc)
- else
+ if ~exist(matF, 'file')		% spreadsheet processing not yet done
     datList = {'TMP' 'RELH' 'SKNT' ...	% data types of interest
        'GUST' 'DRCT'};
     nDat = length(datList);		% nu. data types
     bReqs = repmat([-Inf Inf], ...	% burn required ranges at 6 stations
        nDat + 1, 1, 6);
-    bReqs([1:3 6],:,1) = [61 85		% TeMPerature range (∞F)
+    bReqs([1:3 6],:,1) = [61 85		% TeMPerature range (deg F)
                           16 22		% RELative Humidity range (%)
 		           0 15		% Speed in mi/h (not KNoTs)
 		           9 10];	% Sep--Oct for station FSHU1
-    bReqs([1:3 6],:,2) = [60 90		% TeMPerature range (∞F)
+    bReqs([1:3 6],:,2) = [60 90		% TeMPerature range (deg F)
                           30 55		% RELative Humidity range (%)
 		           6 20		% Speed in mi/h (not KNoTs)
 		           1  3];	% Jan--Mar for station KCWV
@@ -35,16 +35,18 @@
 %
 % Below here, everything should work automatically...
 %
-    bReqs(1,:,:) = (bReqs(1,:,:) - 32)*5/9;
-    bReqs(3,:,:) = bReqs(3,:,:)*1609.344/60^2;
+    bReqs(1,:,:) = (bReqs(1,:,:) - ...	% convert deg F to deg C
+       32)*5/9;
+    bReqs(3,:,:) = bReqs(3,:,:)* ...	% convert to m/s
+       1609.344/60^2;
     d = dir(fullfile(ext, ['*' ext]));	% files listing
-    fprintf('Starting reading %d files ',length(d))
+    fprintf('Starting reading %d files ', length(d))
     sta = struct('name', unique( ...	% unique station names ...
        arrayfun(@(x) x.name(1:max( ...	% ... assuming before last '_'
        strfind(x.name, '_')) - 1), ...
        d, 'UniformOutput', false)));
     lSta = 1 : length(sta);		% station list
-    fprintf('from %d stations.\n',lSta(end))
+    fprintf('from %d stations.\n', lSta(end))
     for i = lSta			% station loop:
        j = cellfun(@(x) ...		% files matching station i:
 	  ~isempty(x), strfind({d.name}, sta(i).name));
@@ -71,9 +73,9 @@
        sta(i).d = struct('hdr', ...	% allocate structure:
 	  cell(1, sta(i).nYr));
        for j = 1 : sta(i).nYr		% year loop at station i:
-	  tic
 	  m = fullfile(ext, sprintf(...	% reconstruct spreadsheet file name:
 	     '%s_%d.%s', sta(i).name, sta(i).yr(j), ext));
+	  tic
 	  [num, txt] = xlsread(m);	% txt prepends the header row
 % 	  tst{n} = find(cellfun(@(x)~isempty(x),strfind(txt(:,1),'<')));n=n+1;
 	  if ~isempty(num)
@@ -103,7 +105,7 @@
 		sta(i).d(j).f(:,k) = ...% get field type k:
 		   num(:, l);
 		sta(i).d(j).u(k) = ...	% get units after 1st ' ':
-		   cellfun(@(x) x(min(strfind(x, ' '))+1 : end), txt(1, l + 1), ...
+		   cellfun(@(x) x(min(strfind(x, ' '))+1 : end), txt(1, l), ...
 		   'UniformOutput', false);
 	     end
 	  else
@@ -113,6 +115,11 @@
        end
     end, clear i j k l m num q txt
     save(matF)
+ else
+    tic
+    fprintf('Loading %s takes ',matF)
+    load(matF)
+    fprintf('%5.1fs\n',toc)
  end
  %% 
  analXls_figs
