@@ -105,6 +105,7 @@
 	  repmat('%f', 1, max(sta(i).datI) - 2) '%*[^\n]'], 'Delimiter', ',');
        fclose(f);
        sta(i).t = datenum(T{2}, datef);	% time (days) in column 2
+       % sta(i).yr = unique(num2cell(datestr(sta(i).t, 'yyyy'), 2));
        sta(i).d = cell2mat( ...		% data in other columns
 	  T(:,sta(i).datI));
        sta(i).nt = length(sta(i).t);	% nu. times

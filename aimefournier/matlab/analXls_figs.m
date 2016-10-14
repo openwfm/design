@@ -1,56 +1,48 @@
 
-% Author: Aimé Fournier
+% Author: Aime' Fournier
 
  clear a cm h
  for i = lSta				% station (with burn requirements) loop:
     figure(i)
-    set(gcf,'Units','normalized','OuterPosition',[1/8 0 7/8 1],'Units','pixels')
+    set(gcf, 'Units', 'normalized', 'OuterPosition', [1/8 0 7/8 1], 'Units', 'pixels')
     clf
-    cm = colormap(jet(sta(i).nYr));	% color for each year
+    yr = datevec(min(sta(i).t)) : datevec(max(sta(i).t));
+    nYr = length(yr);
+    cm = colormap(jet(nYr));		% color for each year
     fRan = repmat([Inf
-                  -Inf],1, nDat);	% range of field values
+                  -Inf], 1, nDat);	% range of field values
     isp = false(1, nDat);		% plot started
     nPt = 0;				% nu. points plotted
-%     dStat = zeros(1 + nDat + ...	% data statistics
-%        nDat*(nDat + 1)/2, nSta);
-    for j = 1 : sta(i).nYr		% year loop at station i:
-       if sta(i).d(j).nt > 0		% if there are times to plot:
-	  Jan1 = datenum(sprintf('01-01-%4d 00:00', sta(i).yr(j)), datef);
-	  t = (sta(i).d(j).t + rDate ...% months since January 1 00:00
-	     - Jan1)*12/365;
-	  b = ([datenum(sprintf('%02d-01-%4d 00:00', bReqs(nDat+1,1,i)  , sta(i).yr(j)), datef) ...
-	        datenum(sprintf('%02d-01-%4d 00:00', bReqs(nDat+1,2,i)+1, sta(i).yr(j)), datef) - 1/(24*60)] ...
-	      - Jan1)*12/365;
-	  q = strcmp(sta(i).d(j).qFlg, 'OK');
-	  nPt = nPt + sum(q);
-	  if sum(q)			% at least 1 'OK' datum
-% 	     f = find(            le( b(             1  ),             t(q  ) ) & ...
-% 		                  ge( b(             2  ),             t(q  ) ) & ...
-% 		      all(bsxfun(@le, bReqs(1 : nDat,1,i), sta(i).d(j).f(q,:)') & ...
-% 		          bsxfun(@ge, bReqs(1 : nDat,2,i), sta(i).d(j).f(q,:)'))');
-% 	     dStat(1,i) = dStat(1,i) + length(f);
-	     for k = 1 : nDat		% data-type loop:
-% 		dStat
-		if ~all(isnan(sta(i).d(j).f(q,k)))
-		   if isp(k)		% insert in started plot:
-		      subplot(h.a(k, i))
-		      h.p(k, j, i) = line(t(q), sta(i).d(j).f(q, k), 'Color', cm(j, :), 'LineStyle', 'none', 'Marker', '.');
-		   else			% start plot:
-		      h.a(k, i) = subplot(nDat, 1, k);
-		      h.p(k, j, i) = plot(t(q), sta(i).d(j).f(q, k), '.', 'Color', cm(j, :));
-		      isp(k) = true;
-		   end
-		   if sum(strcmp({'SKNT'}, datList{k}))
-		      set(gca, 'YScale', 'log')
-		   end			% ... log scale for RELH and SKNT
-		   axis tight
-		   fRan(:, k) = [min(fRan(1, k), min(sta(i).d(j).f(q, k)))
-		                 max(fRan(2, k), max(sta(i).d(j).f(q, k)))];
-		   if j == sta(i).nYr
-		      a = axis;
-		      h.b(k, i, 1) = patch([b([1     1]) a([1 1])],  a([3 4 4 3])                  , 'r');
-		      h.b(k, i, 2) = patch([b([  2 2  ]) a([2 2])],  a([4 3 3 4])                  , 'r');
-		      h.b(k, i, 3) = patch( b([1 2 2 1])          , [a([  3 3  ]) bReqs(k,[1 1],i)], 'r');
+    for j = 1 : nYr			% year loop at station i:
+       f = find(datevec(sta(i).t) == yr(j));
+       Jan1 = datenum(sprintf('%4d-01-01T00:00:00Z', yr(j)), datef);
+       t = (sta(i).t(f) - Jan1)*12/365;	% months since January 1 00:00
+       b(1,:) = ([datenum(sprintf('%4d-%2d-%2dT00:00:00Z', yr(j), sta(i).bmdh(1, 1 : 2)), datef) ...
+	          datenum(sprintf('%4d-%2d-%2dT00:00:00Z', yr(j), sta(i).bmdh(2, 1 : 2)), datef)] ...
+	        - Jan1)*12/365;		% month/day window
+       b(2,:) = sta(i).bmdh(:, 3);	% hour window
+       nPt = nPt + length(f);
+       for k = 1 : nDat			% data-type loop:
+	  if ~all(isnan(sta(i).d(f,k)))
+	     if isp(k)			% insert in started plot:
+		subplot(h.a(k, i))
+		h.p(k, j, i) = line(t, sta(i).d(f,k), 'Color', cm(j, :), 'LineStyle', 'none', 'Marker', '.');
+	     else			% start plot:
+		h.a(k, i) = subplot(nDat, 1, k);
+		h.p(k, j, i) = plot(t, sta(i).d(f,k), '.', 'Color', cm(j, :));
+		isp(k) = true;
+	     end
+	     if sum(strcmp({'wind_speed'}, datList{k}))
+		set(gca, 'YScale', 'log')
+	     end			% ... log scale for wind_speed
+	     axis tight
+	     fRan(:, k) = [min(fRan(1, k), min(sta(i).d(f,k)))
+		           max(fRan(2, k), max(sta(i).d(f,k)))];
+	     if j == nYr
+		a = axis;
+		h.b(k, i, 1) = patch([b(1,[1     1]) a([1 1])],  a([3 4 4 3])                  , 'r');
+		h.b(k, i, 2) = patch([b(1,[  2 2  ]) a([2 2])],  a([4 3 3 4])                  , 'r');
+		h.b(k, i, 3) = patch( b(1,[1 2 2 1])          , [a([  3 3  ]) sta(i).bR(k,[1 1],i)], 'r');
 		      h.b(k, i, 4) = patch( b([2 1 1 2])          , [a([4     4]) bReqs(k,[2 2],i)], 'r');
 		      set(h.b(k, i, :), 'EdgeColor', 'none', 'FaceColor', [1 1 1]*.7, 'FaceAlpha', .3)
 		      axis(a)
