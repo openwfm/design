@@ -75,7 +75,6 @@
        end
        sta(i).bmdh = cell2mat(sta(i).bmdh);
     end,clear i j T
-    %% 
     nDat = length(datList);		% nu. data types
     for i = lSta			% station loop:
        %
