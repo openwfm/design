@@ -25,7 +25,7 @@
     %
     % Below here, everything should work automatically...
     %
-    % Assign station and data names from bReqF:
+    % Assign station and data names from bReqF to cell array sta:
     %
     T = table2cell(readtable(bReqF, 'ReadVariableNames', false));
     bReqH = cellfun(@(x) ...		% burn requirements header
@@ -37,10 +37,13 @@
     for i = 2 : length(sta)		% seek multiple windows at each station
        j = find(strcmp(sta{i}, sta(1 : i - 1)));
        if length(j)			% length(j) > 0 means duplicate names ...
-	  l([i j]) = length(j) + 1;
+	  l([i j]) = length(j) + 1;	% assign equal counts to duplicates
        end
     end,clear i j
     [sta i] = unique(sta);
+    %
+    % Change unique(sta) into a structure:
+    %
     sta = struct('name', sta, 'nWin', num2cell(l(i)));
     lSta = 1 : length(sta);		% station list
     %
@@ -72,6 +75,7 @@
        end
        sta(i).bmdh = cell2mat(sta(i).bmdh);
     end,clear i j T
+    %% 
     nDat = length(datList);		% nu. data types
     for i = lSta			% station loop:
        %
@@ -81,14 +85,14 @@
        fprintf('Processing file %35s, %d of %d, takes ', d.name, i, lSta(end))
        tic
        f = fopen(fullfile(ext, d.name));
-       for j = 1 : intmax		% loop over text starting with '#':
+       for j = 1 : intmax		% loop over metadata rows (starting with '#'):
 	  T = fgetl(f);
 	  if strcmp(T(1), '#')
 	     g = max(find(T==':'));
 	     eval(['sta(i).' matlab.lang.makeValidName(regexprep(T(min(find(T==' ')) + 1 : g - 1),' ','_')) ...
 		'=''' T(g + 2 : end) ''';'])
 	  else
-	     break;			% T is the header now
+	     break;			% T is the main data header now
 	  end
        end
        sta(i).hdr = T;			% header row
@@ -98,8 +102,8 @@
 	  @(x) sum(ismember(datList, x)), T));
        T = strsplit(fgetl(f), ',');	% units row
        sta(i).u = T(sta(i).datI - 1);
-       T = textscan(f, ['%s%s' ...	% read 2 strings, then floats:
-	  repmat('%f', 1, length(T) - 1)], 'Delimiter', ',');
+       T = textscan(f, ['%s%s' ...	% read 2 strings, then some floats, then skip to EOL:
+	  repmat('%f', 1, max(sta(i).datI) - 2) '%*[^\n]'], 'Delimiter', ',');
        fclose(f);
        sta(i).t = datenum(T{2}, datef);	% time (days) in column 2
        sta(i).d = cell2mat( ...		% data in other columns
