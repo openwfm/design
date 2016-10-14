@@ -1,119 +1,112 @@
-
 % Author:	Aimé Fournier
 % File:		analXls.m
-% Purpose:	Analyze .xlsx spreadsheets
+% Purpose:	Analyze .xlsx spreadsheets as described below.
 
  clear
 %
-% The intention is to run this script section-by-section (between %%) from
+% The intention is to run this script section-by-section (between "%%") from
 % the Matlab editor using the Command-Enter keystroke;
 % however, it may work simply from the Matlab command window too.
 % It will display what it is doing.
 %
 % A few lines may need to be edited for customized use:
 %
+ ext = 'csv';				% spreadsheet file extension
+ bReqF = fullfile(ext, ['bReqs.' ext]); % burn requirements file
+ matF = fullfile('mat', 'analXls.mat');	% .mat file name
  wd = '~/research/UCD/FASMEE/fasmee/aimefournier/matlab/';
  cd(wd)			 		% directory of scripts
- matF = fullfile('mat','analXls.mat');	% .mat file name
+ %% 
  if ~exist(matF, 'file')		% spreadsheet processing not yet done
-    datList = {'TMP' 'RELH' 'SKNT' ...	% data types of interest
-       'GUST' 'DRCT'};
-    nDat = length(datList);		% nu. data types
-    bReqs = repmat([-Inf Inf], ...	% burn required ranges at 6 stations
-       nDat + 1, 1, 6);
-    bReqs([1:3 6],:,1) = [61 85		% TeMPerature range (deg F)
-                          16 22		% RELative Humidity range (%)
-		           0 15		% Speed in mi/h (not KNoTs)
-		           9 10];	% Sep--Oct for station FSHU1
-    bReqs([1:3 6],:,2) = [60 90		% TeMPerature range (deg F)
-                          30 55		% RELative Humidity range (%)
-		           6 20		% Speed in mi/h (not KNoTs)
-		           1  3];	% Jan--Mar for station KCWV
-    bReqs(:,:,3:4) = bReqs(:,:,[2 2]);	% stations KLHW,  LCSS1 like KCWV
-    bReqs(:,:,5:6) = bReqs(:,:,[1 1]);	% stations QLBA3, TT084 like FSHU1
-    ext = 'xlsx';			% spreadsheet file extension
-%
-% Below here, everything should work automatically...
-%
-    bReqs(1,:,:) = (bReqs(1,:,:) - ...	% convert deg F to deg C
-       32)*5/9;
-    bReqs(3,:,:) = bReqs(3,:,:)* ...	% convert to m/s
-       1609.344/60^2;
-    d = dir(fullfile(ext, ['*' ext]));	% files listing
-    fprintf('Starting reading %d files ', length(d))
-    sta = struct('name', unique( ...	% unique station names ...
-       arrayfun(@(x) x.name(1:max( ...	% ... assuming before last '_'
-       strfind(x.name, '_')) - 1), ...
-       d, 'UniformOutput', false)));
+    datef = 'yyyy-mm-ddTHH:MM:SSZ';	% date format
+    datList = {'air_temp' ...		% data types of interest
+       'relative_humidity' 'wind_speed' 'wind_direction' 'wind_gust'};
+    % datList = {'TMP' 'RELH' 'SKNT' 'GUST' 'DRCT'};
+    %
+    % Below here, everything should work automatically...
+    %
+    % Assign station and data names from bReqF:
+    %
+    T = table2cell(readtable(bReqF, 'ReadVariableNames', false));
+    bReqH = cellfun(@(x) ...		% burn requirements header
+       sscanf(x, '%s %s%*s%*s'), T(1,2 : end), 'UniformOutput', false);
+    nReq = length(bReqH)/2;		% assume min, max for each requirement
+    sta = cellfun(...			% formatted read of station names:
+       @(x) sscanf(x, 'ID = %s'), T(2 : end,1), 'UniformOutput', false)';
+    l = ones(1, length(sta));		% nu. time windows at stations
+    for i = 2 : length(sta)		% seek multiple windows at each station
+       j = find(strcmp(sta{i}, sta(1 : i - 1)));
+       if length(j)			% length(j) > 0 means duplicate names ...
+	  l([i j]) = length(j) + 1;
+       end
+    end,clear i j
+    [sta i] = unique(sta);
+    sta = struct('name', sta, 'nWin', num2cell(l(i)));
     lSta = 1 : length(sta);		% station list
-    fprintf('from %d stations.\n', lSta(end))
+    %
+    % Assign burn required data min, max at each station:
+    %
+    k = 2;				% skip header row
     for i = lSta			% station loop:
-       j = cellfun(@(x) ...		% files matching station i:
-	  ~isempty(x), strfind({d.name}, sta(i).name));
-       sta(i).nYr = sum(j);		% nu. years at station i
-       sta(i).yr = cellfun(@(x) ...	% year after last '_' before last '.'
-	  eval(x(max(strfind(x, '_')) + 1 : min(strfind(x, '.')) - 1)), {d(j).name});
-       if sta(i).nYr ~= ...		% check all years counted
-	      length(sta(i).yr)
-	  error('%d = sta(%d).nYr ~= length(sta(%d).yr) = %d', ...
-	     sta(i).nYr, i, i, length(sta(i).yrs))
-       end
-    end, clear i j
-    if length(cell2mat({sta.yr})) ~= ...% check all files processed:
-	  length(d)
-       error('%d = length(cell2mat({sta.yr})) ~= length(d) = %d', ...
-	  length(cell2mat({sta.yr})), length(d))
-    end
-    datef = 'mm-dd-yyyy HH:MM    ';	% date format
-    rDate = datenum( ...		% reference date
-       '01-01-2005 00:00', datef);
-    warning('off','MATLAB:xlsreadold:Truncation');
-%     clear tst,n = 1;
-    for i = lSta			% station loop:
-       sta(i).d = struct('hdr', ...	% allocate structure:
-	  cell(1, sta(i).nYr));
-       for j = 1 : sta(i).nYr		% year loop at station i:
-	  m = fullfile(ext, sprintf(...	% reconstruct spreadsheet file name:
-	     '%s_%d.%s', sta(i).name, sta(i).yr(j), ext));
-	  tic
-	  [num, txt] = xlsread(m);	% txt prepends the header row
-% 	  tst{n} = find(cellfun(@(x)~isempty(x),strfind(txt(:,1),'<')));n=n+1;
-	  if ~isempty(num)
-	     sta(i).d(j).nt = ...	% nu. times
-		size(num, 1);
-	     sta(i).d(j).hdr = ...	% header row
-		txt(1, :);
-	     sta(i).d(j).ts = ...	% time string
-		txt(1 + (1 : sta(i).d(j).nt), 1);
-	     sta(i).d(j).note = ...	% foot note:
-		txt(2 + sta(i).d(j).nt : end, 1);
-	     sta(i).d(j).t = cellfun(...% time values:
-		@(x) datenum(x, datef) - rDate, sta(i).d(j).ts);
-	     q = cell2mat(arrayfun(@(x)~isempty(strfind(x{1},'EDT')), sta(i).d(j).ts, 'UniformOutput', false));
-	     sta(i).d(j).t(q) = ...	% convert to GMT:
-		sta(i).d(j).t(q) + 4/24;
-	     q = cell2mat(arrayfun(@(x)~isempty(strfind(x{1},'EST')), sta(i).d(j).ts, 'UniformOutput', false));
-	     sta(i).d(j).t(q) = ...	% convert to GMT:
-		sta(i).d(j).t(q) + 5/24;
-	     sta(i).d(j).qFlg = ...	% quality flag:
-		txt(1 + (1 : sta(i).d(j).nt), ...
-		cellfun(@(x) ~isempty(x), strfind(txt(1, :), 'QFLG')));
-	     txt(:,1) = [];		% delete column 1
-	     for k = 1 : nDat		% data-type loop:
-		l = cellfun( ...	% find column for this type:
-		   @(x) ~isempty(x), strfind(txt(1, :), datList{k}));
-		sta(i).d(j).f(:,k) = ...% get field type k:
-		   num(:, l);
-		sta(i).d(j).u(k) = ...	% get units after 1st ' ':
-		   cellfun(@(x) x(min(strfind(x, ' '))+1 : end), txt(1, l), ...
-		   'UniformOutput', false);
-	     end
-	  else
-	     sta(i).d(j).nt = 0;
+       for j = 1 : sta(i).nWin		% window loop:
+	  sta(i).bReqs(1 : 2, ...	% min & max values of data:
+	     1 : nReq - 1, j) = reshape(cellfun(@str2num, T(k,2 : 2*nReq - 1)), 2, nReq - 1);
+	  for l = 1 : 2			% start and finish of time window:
+	     [~, sta(i).bmdh{l, 1 : 3, j}] = datevec(T{k,2*nReq - 1 + l});
 	  end
-	  fprintf('Processing %s took %5.2fs\n', m, toc)
+	  k = k + 1;			% point to next row
+	  fprintf('Station %5s, window %d requires ', sta(i).name, j)
+	  for l = 1 : nReq - 1
+	     fprintf('%d<=%s<=%d, ', sta(i).bReqs(1,l,j), bReqH{2*l}(4:end), sta(i).bReqs(2,l,j))
+	     switch bReqH{2*l}(4:end)	% convert units:
+		case 'SKNT'
+		   sta(i).bReqs(:,l,j) = ...	% convert mi/h to m/s:
+		      sta(i).bReqs(:,l,j)*1609.344/60^2;
+		case 'TMP'
+		   sta(i).bReqs(:,l,j) = ...	% convert deg F to deg C:
+		      (sta(i).bReqs(:,l,j) - 32)*5/9;
+	     end
+	  end
+	  fprintf('%02d/%02d<=day<=%02d/%02d, %02d<=hour<=%02d.\n', ...
+	     cell2mat(sta(i).bmdh(:,1:2,j))', sta(i).bmdh{:,3,j})
        end
-    end, clear i j k l m num q txt
+       sta(i).bmdh = cell2mat(sta(i).bmdh);
+    end,clear i j T
+    nDat = length(datList);		% nu. data types
+    for i = lSta			% station loop:
+       %
+       % Read data from spreadsheet for station i:
+       %
+       d = dir(fullfile(ext, sprintf('%s*.%s', sta(i).name,ext)));
+       fprintf('Processing file %35s, %d of %d, takes ', d.name, i, lSta(end))
+       tic
+       f = fopen(fullfile(ext, d.name));
+       for j = 1 : intmax		% loop over text starting with '#':
+	  T = fgetl(f);
+	  if strcmp(T(1), '#')
+	     g = max(find(T==':'));
+	     eval(['sta(i).' matlab.lang.makeValidName(regexprep(T(min(find(T==' ')) + 1 : g - 1),' ','_')) ...
+		'=''' T(g + 2 : end) ''';'])
+	  else
+	     break;			% T is the header now
+	  end
+       end
+       sta(i).hdr = T;			% header row
+       T = strsplit(strrep(T, ...	% truncate useless suffices and
+	  '_set_1', ''), ',');		% split strings delimited by ','
+       sta(i).datI = find(cellfun( ...	% data column indexes
+	  @(x) sum(ismember(datList, x)), T));
+       T = strsplit(fgetl(f), ',');	% units row
+       sta(i).u = T(sta(i).datI - 1);
+       T = textscan(f, ['%s%s' ...	% read 2 strings, then floats:
+	  repmat('%f', 1, length(T) - 1)], 'Delimiter', ',');
+       fclose(f);
+       sta(i).t = datenum(T{2}, datef);	% time (days) in column 2
+       sta(i).d = cell2mat( ...		% data in other columns
+	  T(:,sta(i).datI));
+       sta(i).nt = length(sta(i).t);	% nu. times
+       fprintf('%5.1fs\n',toc)
+    end, clear d f i j T
     save(matF)
  else
     tic
@@ -121,6 +114,7 @@
     load(matF)
     fprintf('%5.1fs\n',toc)
  end
+
  %% 
  analXls_figs
  %% 
@@ -160,17 +154,26 @@
        for j = 1 : sta(i).nYr		% year loop at station i:
 	  if sta(i).d(j).nt <= 0	% if there aren't times to plot:
 	     fprintf('No times for %s_%d\n', sta(i).name, sta(i).yr(j))
+%
+%	     n is the sample size
+%	     m is the mean
+%	     s is the std dev
+%	     r is the correlation
+%
 	     sta(i).mom(j).n = zeros(1, nDat             );
 	     sta(i).mom(j).m = NaN(  1, nDat             );
 	     sta(i).mom(j).s = NaN(  1, nDat             );
 	     sta(i).mom(j).r = NaN(  1, nDat*(nDat - 1)/2);
 	     continue			% re-enter loop at next j value
 	  end
+%
+% Explain q in words
+%
 	  q = any(cell2mat(cellfun(@(x)strcmp(sta(i).d(j).qFlg, x), {'N/A' 'OK'}, 'UniformOutput', false)), 2);
 	  fprintf('%5s_%d %4d days: %4d OK QFLG, ', sta(i).name, sta(i).yr(j), sta(i).d(j).nt, sum(q))
 	  Jan1 = datenum(sprintf('01-01-%4d 00:00', sta(i).yr(j)), datef);
 	  t = (sta(i).d(j).t ...	% months since January 1 00:00
-	     + rDate - Jan1)*12/365;
+	      - Jan1)*12/365;
 	  b = ([datenum(sprintf('%02d-01-%4d 00:00', bReqs(nDat+1,1,i)  , sta(i).yr(j)), datef) ...
 	        datenum(sprintf('%02d-01-%4d 00:00', bReqs(nDat+1,2,i)+1, sta(i).yr(j)), datef) ] ...
 	     - Jan1)*12/365;		% time requirement in months
@@ -192,7 +195,13 @@
 	  sta(i).ags.n = sta(i).ags.n + sta(i).mom(j).n;
 	  for k = 1 : nDat
 	     if sta(i).mom(j).n(k) > 0
+%
+%		Compute the mean for this year:
+%
 		sta(i).mom(j).m(k) = sum(sta(i).d(j).f(q(:,k),k))/sta(i).mom(j).n(k);
+%
+%		Aggregate over years:
+%
 		sta(i).ags.m(k) = ((sta(i).ags.n(k) - sta(i).mom(j).n(k))*sta(i).ags   .m(k) + ...
 		                                      sta(i).mom(j).n(k) *sta(i).mom(j).m(k))/sta(i).ags.n(k);
 	     else
@@ -251,4 +260,4 @@
  analXls_Mdists
  %% 
  tLim = [min(arrayfun(@(x)min(cell2mat(arrayfun(@(y) min(y.t), x.d, 'UniformOutput', false))), sta))
-         max(arrayfun(@(x)max(cell2mat(arrayfun(@(y) max(y.t), x.d, 'UniformOutput', false))), sta))] + rDate;
+         max(arrayfun(@(x)max(cell2mat(arrayfun(@(y) max(y.t), x.d, 'UniformOutput', false))), sta))];
