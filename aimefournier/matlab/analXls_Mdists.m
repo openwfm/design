@@ -26,6 +26,9 @@
 %        fprintf('%5s min eigenvalue %9.1e\n', sta(i).name, min(eig(p)))
        p = chol(inv(p), 'lower');	% p*p' is the precision matrix
        r = sqrt(sum(((sta(i).d - repmat(sta(i).mom(l).m, sta(i).nt, 1))*p).^2, 2));
+       [~,j] = sort(r); j = j(1 : 64); k = datestr(sta(i).t(j), datef);
+       writetable(table(r(j), k, 'VariableNames', {'M_dev' 'time'}), ...
+	  sprintf('txt/M_%s-%d.txt',sta(i).name,l))
        j = find(isfinite(r));		% LGST can be -Inf
        [sta(i).Md(1,2,l) sta(i).Md(1,1,l)] = min(r(j));
        [sta(i).Md(2,2,l) sta(i).Md(2,1,l)] = max(r(j));
