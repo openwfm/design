@@ -141,20 +141,18 @@
  kt = find(strcmp(datList,'air_temp'))	% index for temperature
  kr = find(strcmp(datList,'relative_humidity'))
  ks = find(strcmp(datList,'wind_speed'))% index for wind speed
- kg = find(strcmp(datList,'wind_gust'))	% index for wind gust
  kd = find(strcmp(datList,'wind_direction'))
- datList([kr ks kg kd]) = {... %'LRH'
+ kg = find(strcmp(datList,'wind_gust'))	% index for wind gust
+ datList([kr ks kd kg]) = {... %'LRH'
     'DWP' 'UWND' 'VWND' 'LGST'};
  for i = lSta				% station loop:
-    sta(i).bReqs(:,[kg kd],:) = ...	% keep wind_speed requirement in UWND row of bReqs ...
-       sta(i).bReqs(:,[kd kg],:);	% but swap wind_gust and wind_direction requirements (currently null).
     sta(i).d(:,kr) = ...		% change RELH to dew-point temperature:
        RELH2DWT(sta(i).d(:,kr), sta(i).d(:,kt));
 %      log10(sta(i).d(:,kr));		% _or_ just take its log10.
     sta(i).u{kr} = 'Celsius';
     sta(i).d(sta(i).d(:,ks) == 0,kd) ...% replace wind_direction NaNs when wind_direction not defined:
         = 0;
-    sta(i).d(:,[ks kg kd]) = ...	% apply d2c and move GUST -> LGST to end:
+    sta(i).d(:,[ks kd kg]) = ...	% apply d2c and GUST -> LGST:
        [bsxfun(@times, sta(i).d(:,ks), d2c(sta(i).d(:,kd))) log10(sta(i).d(:,kg))];
     sta(i).u{kd} = sta(i).u{ks};	% change label units
  end,clear d2c i j kd kg kr ks kt
@@ -164,109 +162,69 @@
     kd = find(strcmp(datList(1 : nDat), 'DWP' ))
     ku = find(strcmp(datList(1 : nDat), 'UWND'))
     kv = find(strcmp(datList(1 : nDat), 'VWND'))
-    ib = @(a,x) a(1) < x & x < a(2);	% in-between condition
+    ib = @(a,x) a(1) <= x & x <= a(2);	% in-between condition
     for i = lSta			% station (with burn requirements) loop:
-       sta(i).ags = struct('n', zeros(1, nDat), 'm', zeros(1, nDat), 's', zeros(1, nDat), 'r', zeros(1, nDat*(nDat - 1)/2));
+       [~, d{1 : 3}] = datevec(sta(i).t);
        for l = 1 : sta(i).nWin		% window loop at station i:
 	  %
-	  % n is the sample size
-	  % m is the mean
-	  % s is the std dev
-	  % r is the correlation
+	  % logical f tests the burn requirements:
 	  %
-	     sta(i).mom(j).n = zeros(1, nDat             );
-	     sta(i).mom(j).m = NaN(  1, nDat             );
-	     sta(i).mom(j).s = NaN(  1, nDat             );
-	     sta(i).mom(j).r = NaN(  1, nDat*(nDat - 1)/2);
-	     continue			% re-enter loop at next j value
-	  end
-%
-% Explain q in words
-%
-	  q = any(cell2mat(cellfun(@(x)strcmp(sta(i).d(j).qFlg, x), {'N/A' 'OK'}, 'UniformOutput', false)), 2);
-	  fprintf('%5s_%d %4d days: %4d OK QFLG, ', sta(i).name, sta(i).yr(j), sta(i).d(j).nt, sum(q))
-	  Jan1 = datenum(sprintf('01-01-%4d 00:00', sta(i).yr(j)), datef);
-	  t = (sta(i).d(j).t ...	% months since January 1 00:00
-	      - Jan1)*12/365;
-	  b = ([datenum(sprintf('%02d-01-%4d 00:00', bReqs(nDat+1,1,i)  , sta(i).yr(j)), datef) ...
-	        datenum(sprintf('%02d-01-%4d 00:00', bReqs(nDat+1,2,i)+1, sta(i).yr(j)), datef) ] ...
-	     - Jan1)*12/365;		% time requirement in months
-	  q = q & b(1) <= t & ...	% not too early, and ...
-	          b(2) >  t;		% ... not too late.
-	  fprintf('%4d OK time, ', sum(q))
-	  q = q & ib(bReqs(kt,:,i), ...	% ... not too hot or cold.
-	             sta(i).d(j).f(:,kt));
-	  fprintf('%4d OK %s, ', sum(q), datList{kt})
-	  q = q & ib(bReqs(kd,:,i), ...	% ... not too wet or dry.
-	             RELH2DWT(sta(i).d(j).f(:,kd), sta(i).d(j).f(:,kt), -1));
-	  fprintf('%4d OK RELH, ', sum(q))
-	  q = q & ib(bReqs(ku,:,i), ...	% ... not too fast or slow.
-	             sqrt(sum(sta(i).d(j).f(:,[ku kv]).^2, 2)));
-          fprintf('%4d OK SKNT, ', sum(q))
-	  q = bsxfun(@and, q, isfinite(sta(i).d(j).f));
-	  sta(i).mom(j).n = sum(q);	% nu. times meeting criteria for each field
-          fprintf('[%s\b] finite values\n', sprintf('%3d ', sta(i).mom(j).n))
-	  sta(i).ags.n = sta(i).ags.n + sta(i).mom(j).n;
+          f = ib(sta(i).bmdh( :, 1,l), d{1}) & ...
+	      ib(sta(i).bmdh( :, 2,l), d{2}) & ...
+	      ib(sta(i).bmdh( :, 3,l), d{3});
+	  fprintf('%5s window %d, %4d potential days: ', sta(i).name, l, sum(f))
+	  %
+	  % not too hot or cold:
+	  %
+	  f = f & ib(sta(i).bReqs(:,kt,l), sta(i).d(:,kt));
+	  fprintf('%4d OK air_temp, ', sum(f))
+	  %
+	  % not too wet or dry:
+	  %
+	  f = f & ib(sta(i).bReqs(:,kd,l), RELH2DWT(sta(i).d(:,kd), sta(i).d(:,kt), -1));
+	  fprintf('%4d OK relative_humidity, ', sum(f))
+	  %
+	  % not too fast or slow:
+	  %
+	  f = f & ib(sta(i).bReqs(:,ku,l), sqrt(sum(sta(i).d(:,[ku kv]).^2, 2)));
+          fprintf('%4d OK wind_speed, ', sum(f))
+	  f = bsxfun(@and, f, isfinite(sta(i).d));
+	  %
+	  % sample size n, mean m, std dev s, correlation r:
+	  %
+	  sta(i).mom(l).n = sum(f);
+	  sta(i).mom(l).m = NaN(  1, nDat             );
+	  sta(i).mom(l).s = NaN(  1, nDat             );
+	  sta(i).mom(l).r = NaN(  1, nDat*(nDat - 1)/2);
+          fprintf('[%s\b] finite values\n', sprintf('%3d ', sta(i).mom(l).n))
 	  for k = 1 : nDat
-	     if sta(i).mom(j).n(k) > 0
-%
-%		Compute the mean for this year:
-%
-		sta(i).mom(j).m(k) = sum(sta(i).d(j).f(q(:,k),k))/sta(i).mom(j).n(k);
-%
-%		Aggregate over years:
-%
-		sta(i).ags.m(k) = ((sta(i).ags.n(k) - sta(i).mom(j).n(k))*sta(i).ags   .m(k) + ...
-		                                      sta(i).mom(j).n(k) *sta(i).mom(j).m(k))/sta(i).ags.n(k);
-	     else
-		sta(i).mom(j).m(k) = NaN;
+	     if sta(i).mom(l).n(k) > 0
+		%
+		% Compute the mean:
+		%
+		sta(i).mom(l).m(k) = sum(sta(i).d(f(:,k),k))/sta(i).mom(l).n(k);
 	     end
-	     if sta(i).mom(j).n(k) > 1
-		sta(i).mom(j).s(k) = sqrt(sum((sta(i).d(j).f(q(:,k),k) - sta(i).mom(j).m(k)).^2)/(sta(i).mom(j).n(k) - 1));
-	        sta(i).ags.s(k) = ((sta(i).ags.n(k) - sta(i).mom(j).n(k) - 1)*sta(i).ags   .s(k)   + ...
-	                           (                  sta(i).mom(j).n(k) - 1)*sta(i).mom(j).s(k)^2) ...
-	                           /(sta(i).ags.n(k) - 1);
-		if sta(i).ags.n(k) > sta(i).mom(j).n(k)
-		   sta(i).ags.s(k) = sta(i).ags.s(k) + ...
-		      (sta(i).mom(j).n(k)*sta(i).ags.n(k)/(sta(i).ags.n(k) - sta(i).mom(j).n(k))) * ...
-		      (sta(i).mom(j).m(k) - sta(i).ags.m(k))^2/(sta(i).ags.n(k) - 1);
-		end
-	     else
-		sta(i).mom(j).s(k) = NaN;
+	     if sta(i).mom(l).n(k) > 1
+		%
+		% Compute the std dev:
+		%
+		sta(i).mom(l).s(k) = sqrt(sum((sta(i).d(f(:,k),k) - sta(i).mom(l).m(k)).^2)/(sta(i).mom(l).n(k) - 1));
 	     end
 	  end
 	  m = 0;
 	  for k = 1 : nDat - 1
-	     for l = k + 1 : nDat
+	     for j = k + 1 : nDat
 		m = m + 1;
-		if all(sta(i).mom(j).n([k l]) > 1)
-		   sta(i).mom(j).r(m) = sum( ...
-		      (sta(i).d(j).f(q(:,k) & q(:,l),k) - sta(i).mom(j).m(k))  ...
-		    .*(sta(i).d(j).f(q(:,k) & q(:,l),l) - sta(i).mom(j).m(l))) ...
-		        /((sum(q(:,k) & q(:,l)) - 1) * sta(i).mom(j).s(k) * sta(i).mom(j).s(l));
-	           sta(i).ags.r(m) = ((sta(i).ags.n(k) - sta(i).mom(j).n(k) - 1)*sta(i).ags   .r(m) + ...
-	                              (                  sta(i).mom(j).n(k) - 1)*sta(i).mom(j).s(k)*sta(i).mom(j).s(l)*sta(i).mom(j).r(m)) ...
-				  /(sta(i).ags.n(k) - 1);
-		   if sta(i).ags.n(k) > sta(i).mom(j).n(k)
-		      sta(i).ags.r(m) = sta(i).ags.r(m) + ...
-	                 (sta(i).mom(j).n(k)*sta(i).ags.n(k)/(sta(i).ags.n(k) - sta(i).mom(j).n(k))) * ...
-			 (sta(i).mom(j).m(k) - sta(i).ags.m(k))*(sta(i).mom(j).m(l) - sta(i).ags.m(l))/(sta(i).ags.n(k) - 1);
-		   end
-		else
-		   sta(i).mom(j).r(m) = NaN;
+		if all(sta(i).mom(l).n([k j]) > 1)
+		   sta(i).mom(l).r(m) = sum( ...
+		      (sta(i).d(f(:,k) & f(:,j),k) - sta(i).mom(l).m(k)) ...
+		    .*(sta(i).d(f(:,k) & f(:,j),j) - sta(i).mom(l).m(j))) ...
+		     /((sum(f(:,k) & f(:,j)) - 1) * sta(i).mom(l).s(k) * sta(i).mom(l).s(j));
 		end
 	     end
 	  end
        end
-       sta(i).ags.s = sqrt(sta(i).ags.s);
-       m = 0;
-       for k = 1 : nDat - 1
-	  for l = k + 1 : nDat
-	     m = m + 1;
-	     sta(i).ags.r(m) = sta(i).ags.r(m)/(sta(i).ags.s(k)*sta(i).ags.s(l));
-	  end
-       end
-    end, clear b i ib j Jan1 k kd kt ku kv l m q t
+    end, clear f i ib j k kd kt ku kv l m
  end
  %% 
  analXls_stats
