@@ -52,29 +52,36 @@
     k = 2;				% skip header row
     for i = lSta			% station loop:
        for j = 1 : sta(i).nWin		% window loop:
-	  sta(i).bReqs(1 : 2, ...	% min & max values of data:
-	     1 : nReq - 1, j) = reshape(cellfun(@str2num, T(k,2 : 2*nReq - 1)), 2, nReq - 1);
-	  for l = 1 : 2			% start and finish of time window:
-	     [~, sta(i).bmdh{l, 1 : 3, j}] = datevec(T{k,2*nReq - 1 + l});
-	  end
-	  k = k + 1;			% point to next row
-	  fprintf('Station %5s, window %d requires ', sta(i).name, j)
-	  for l = 1 : nReq - 1
-	     fprintf('%d<=%s<=%d, ', sta(i).bReqs(1,l,j), bReqH{2*l}(4:end), sta(i).bReqs(2,l,j))
-	     switch bReqH{2*l}(4:end)	% convert units:
-		case 'SKNT'
-		   sta(i).bReqs(:,l,j) = ...	% convert mi/h to m/s:
-		      sta(i).bReqs(:,l,j)*1609.344/60^2;
-		case 'TMP'
-		   sta(i).bReqs(:,l,j) = ...	% convert deg F to deg C:
-		      (sta(i).bReqs(:,l,j) - 32)*5/9;
+	  fprintf('Station %5s, window %d requires\n ', sta(i).name, j)
+	  m = reshape(cellfun(@str2num, T(k,2 : 2*nReq - 1)), 2, nReq - 1);
+	  for l = 1 : nDat
+	     f = find(strcmp( ...	% compare to data type list:
+		datList{l}, cellfun(@(x) x(4:end), bReqH(2*(1 : nReq - 1)), 'UniformOutput', false)));
+	     if isempty(f)
+		sta(i).bReqs(1 : 2,l,j) = [-Inf Inf];
+	     else
+		sta(i).bReqs(1 : 2, ...	% min & max values of data:
+		   l,j) = m(:,f);
+		fprintf('%d<=%s<=%d, ', sta(i).bReqs(1,l,j), bReqH{2*f}(4:end), sta(i).bReqs(2,l,j))
+		switch bReqH{2*f}(4:end)% convert units:
+		   case 'wind_speed'	% convert mi/h to m/s:
+		      sta(i).bReqs(:,l,j) = ...
+			 sta(i).bReqs(:,l,j)*1609.344/60^2;
+		   case 'air_temp'		% convert deg F to deg C:
+		      sta(i).bReqs(:,l,j) = ...
+			 (sta(i).bReqs(:,l,j) - 32)*5/9;
+		end
 	     end
 	  end
+	  for l = 1 : 2			% start and finish of time window:
+	     [~, sta(i).bmdh{l,1 : 3,j}] = datevec(T{k,2*nReq - 1 + l});
+	  end
+	  k = k + 1;			% point to next row
 	  fprintf('%02d/%02d<=day<=%02d/%02d, %02d<=hour<=%02d.\n', ...
 	     cell2mat(sta(i).bmdh(:,1:2,j))', sta(i).bmdh{:,3,j})
        end
        sta(i).bmdh = cell2mat(sta(i).bmdh);
-    end,clear i j T
+    end,clear f i j k l m T
     nDat = length(datList);		% nu. data types
     for i = lSta			% station loop:
        %
@@ -122,48 +129,51 @@
  %% 
  analXls_figs
  %% 
+ n = 1;
+ for i = lSta
+    for l = 1 : sta(i).nWin
+       print(n, '-dpng',sprintf('figures/%s_w%d_data', sta(i).name, l))
+       n = n + 1;
+    end
+ end
+%% 
  d2c = @(x)-[sind(x),cosd(x)];		% direction 2 component transform
- kt = find(strcmp(datList,'TMP'))	% index for relative humidity
- kr = find(strcmp(datList,'RELH'))	% index for relative humidity
- ks = find(strcmp(datList,'SKNT'))	% index for wind speed
- kg = find(strcmp(datList,'GUST'))	% index for wind gust
- kd = find(strcmp(datList,'DRCT'))	% index for wind direction clockwise from north
+ kt = find(strcmp(datList,'air_temp'))	% index for temperature
+ kr = find(strcmp(datList,'relative_humidity'))
+ ks = find(strcmp(datList,'wind_speed'))% index for wind speed
+ kg = find(strcmp(datList,'wind_gust'))	% index for wind gust
+ kd = find(strcmp(datList,'wind_direction'))
  datList([kr ks kg kd]) = {... %'LRH'
     'DWP' 'UWND' 'VWND' 'LGST'};
- bReqs([kg kd],:,:) = ...		% keep SKNT requirement in UWND row of bReqs ...
-    bReqs([kd kg],:,:);			% but swap GUST and DRCT requirements (currently null).
  for i = lSta				% station loop:
-    for j = find(arrayfun(@(x) x.nt > 0, sta(i).d))
-       sta(i).d(j).f(:,kr) = ...	% change RELH to dew point temperature:
-	  RELH2DWT(sta(i).d(j).f(:,kr), sta(i).d(j).f(:,kt));
-% 	  log10(sta(i).d(j).f(:,kr));	% _or_ just take its log10.
-       sta(i).d(j).u{kr} = '∞ C';
-       sta(i).d(j).f( ...		% replace DRCT NaNs when SKNT == 0 (DRCT not defined):
-	  sta(i).d(j).f(:,ks) == 0,kd) = 0;
-       sta(i).d(j).f(:,[ks kg kd]) = ...% apply d2c and move GUST -> LGST to end:
-	  [bsxfun(@times, sta(i).d(j).f(:,ks), d2c(sta(i).d(j).f(:,kd))) log10(sta(i).d(j).f(:,kg))];
-       sta(i).d(j).u{kd} = ...		% change label units:
-	  sta(i).d(j).u{ks};
-    end
+    sta(i).bReqs(:,[kg kd],:) = ...	% keep wind_speed requirement in UWND row of bReqs ...
+       sta(i).bReqs(:,[kd kg],:);	% but swap wind_gust and wind_direction requirements (currently null).
+    sta(i).d(:,kr) = ...		% change RELH to dew-point temperature:
+       RELH2DWT(sta(i).d(:,kr), sta(i).d(:,kt));
+%      log10(sta(i).d(:,kr));		% _or_ just take its log10.
+    sta(i).u{kr} = 'Celsius';
+    sta(i).d(sta(i).d(:,ks) == 0,kd) ...% replace wind_direction NaNs when wind_direction not defined:
+        = 0;
+    sta(i).d(:,[ks kg kd]) = ...	% apply d2c and move GUST -> LGST to end:
+       [bsxfun(@times, sta(i).d(:,ks), d2c(sta(i).d(:,kd))) log10(sta(i).d(:,kg))];
+    sta(i).u{kd} = sta(i).u{ks};	% change label units
  end,clear d2c i j kd kg kr ks kt
  %% 
  if ~any(strcmp(fieldnames(sta),'mom'))
-    kt = find(strcmp(datList(1 : nDat), 'TMP' ))
+    kt = find(strcmp(datList(1 : nDat), 'air_temp' ))
     kd = find(strcmp(datList(1 : nDat), 'DWP' ))
     ku = find(strcmp(datList(1 : nDat), 'UWND'))
     kv = find(strcmp(datList(1 : nDat), 'VWND'))
     ib = @(a,x) a(1) < x & x < a(2);	% in-between condition
     for i = lSta			% station (with burn requirements) loop:
        sta(i).ags = struct('n', zeros(1, nDat), 'm', zeros(1, nDat), 's', zeros(1, nDat), 'r', zeros(1, nDat*(nDat - 1)/2));
-       for j = 1 : sta(i).nYr		% year loop at station i:
-	  if sta(i).d(j).nt <= 0	% if there aren't times to plot:
-	     fprintf('No times for %s_%d\n', sta(i).name, sta(i).yr(j))
-%
-%	     n is the sample size
-%	     m is the mean
-%	     s is the std dev
-%	     r is the correlation
-%
+       for l = 1 : sta(i).nWin		% window loop at station i:
+	  %
+	  % n is the sample size
+	  % m is the mean
+	  % s is the std dev
+	  % r is the correlation
+	  %
 	     sta(i).mom(j).n = zeros(1, nDat             );
 	     sta(i).mom(j).m = NaN(  1, nDat             );
 	     sta(i).mom(j).s = NaN(  1, nDat             );
