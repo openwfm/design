@@ -3,12 +3,12 @@
 % p = RELH2DWT( r, t [,  1])
 % r = RELH2DWT( p, t  , -1 )
 %
-% At temperature t (∞C), convert
-% relative humidity r (0:100 %) to dew point temperature p (∞C), or p back to r.
+% At temperature t (Celsius), convert
+% relative humidity r (0:100 %) to dew point temperature p (Celsius), or p back to r.
 % See https://en.wikipedia.org/wiki/Dew_point.
 %
 
-% Author: Aimé Fournier
+% Author: Aime' Fournier
 
  if nargin < 3
     f = 1;

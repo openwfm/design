@@ -1,119 +1,123 @@
-
 % Author:	Aimé Fournier
 % File:		analXls.m
-% Purpose:	Analyze .xlsx spreadsheets
+% Purpose:	Analyze .xlsx spreadsheets as described below.
 
  clear
 %
-% The intention is to run this script section-by-section (between %%) from
+% The intention is to run this script section-by-section (between "%%") from
 % the Matlab editor using the Command-Enter keystroke;
 % however, it may work simply from the Matlab command window too.
 % It will display what it is doing.
 %
 % A few lines may need to be edited for customized use:
 %
+ ext = 'csv';				% spreadsheet file extension
+ bReqF = fullfile(ext, ['bReqs.' ext]); % burn requirements file
+ matF = fullfile('mat', 'analXls.mat');	% .mat file name
  wd = '~/research/UCD/FASMEE/fasmee/aimefournier/matlab/';
  cd(wd)			 		% directory of scripts
- matF = fullfile('mat','analXls.mat');	% .mat file name
+ %% 
  if ~exist(matF, 'file')		% spreadsheet processing not yet done
-    datList = {'TMP' 'RELH' 'SKNT' ...	% data types of interest
-       'GUST' 'DRCT'};
-    nDat = length(datList);		% nu. data types
-    bReqs = repmat([-Inf Inf], ...	% burn required ranges at 6 stations
-       nDat + 1, 1, 6);
-    bReqs([1:3 6],:,1) = [61 85		% TeMPerature range (deg F)
-                          16 22		% RELative Humidity range (%)
-		           0 15		% Speed in mi/h (not KNoTs)
-		           9 10];	% Sep--Oct for station FSHU1
-    bReqs([1:3 6],:,2) = [60 90		% TeMPerature range (deg F)
-                          30 55		% RELative Humidity range (%)
-		           6 20		% Speed in mi/h (not KNoTs)
-		           1  3];	% Jan--Mar for station KCWV
-    bReqs(:,:,3:4) = bReqs(:,:,[2 2]);	% stations KLHW,  LCSS1 like KCWV
-    bReqs(:,:,5:6) = bReqs(:,:,[1 1]);	% stations QLBA3, TT084 like FSHU1
-    ext = 'xlsx';			% spreadsheet file extension
-%
-% Below here, everything should work automatically...
-%
-    bReqs(1,:,:) = (bReqs(1,:,:) - ...	% convert deg F to deg C
-       32)*5/9;
-    bReqs(3,:,:) = bReqs(3,:,:)* ...	% convert to m/s
-       1609.344/60^2;
-    d = dir(fullfile(ext, ['*' ext]));	% files listing
-    fprintf('Starting reading %d files ', length(d))
-    sta = struct('name', unique( ...	% unique station names ...
-       arrayfun(@(x) x.name(1:max( ...	% ... assuming before last '_'
-       strfind(x.name, '_')) - 1), ...
-       d, 'UniformOutput', false)));
+    datef = 'yyyy-mm-ddTHH:MM:SSZ';	% date format
+    datList = {'air_temp' ...		% data types of interest
+       'relative_humidity' 'wind_speed' 'wind_direction' 'wind_gust'};
+    % datList = {'TMP' 'RELH' 'SKNT' 'GUST' 'DRCT'};
+    %
+    % Below here, everything should work automatically...
+    %
+    % Assign station and data names from bReqF to cell array sta:
+    %
+    T = table2cell(readtable(bReqF, 'ReadVariableNames', false));
+    bReqH = cellfun(@(x) ...		% burn requirements header
+       sscanf(x, '%s %s%*s%*s'), T(1,2 : end), 'UniformOutput', false);
+    nReq = length(bReqH)/2;		% assume min, max for each requirement
+    sta = cellfun(...			% formatted read of station names:
+       @(x) sscanf(x, 'ID = %s'), T(2 : end,1), 'UniformOutput', false)';
+    l = ones(1, length(sta));		% nu. time windows at stations
+    for i = 2 : length(sta)		% seek multiple windows at each station
+       j = find(strcmp(sta{i}, sta(1 : i - 1)));
+       if length(j)			% length(j) > 0 means duplicate names ...
+	  l([i j]) = length(j) + 1;	% assign equal counts to duplicates
+       end
+    end,clear i j
+    [sta i] = unique(sta);
+    %
+    % Change unique(sta) into a structure:
+    %
+    sta = struct('name', sta, 'nWin', num2cell(l(i)));
     lSta = 1 : length(sta);		% station list
-    fprintf('from %d stations.\n', lSta(end))
+    %
+    % Assign burn required data min, max at each station:
+    %
+    k = 2;				% skip header row
     for i = lSta			% station loop:
-       j = cellfun(@(x) ...		% files matching station i:
-	  ~isempty(x), strfind({d.name}, sta(i).name));
-       sta(i).nYr = sum(j);		% nu. years at station i
-       sta(i).yr = cellfun(@(x) ...	% year after last '_' before last '.'
-	  eval(x(max(strfind(x, '_')) + 1 : min(strfind(x, '.')) - 1)), {d(j).name});
-       if sta(i).nYr ~= ...		% check all years counted
-	      length(sta(i).yr)
-	  error('%d = sta(%d).nYr ~= length(sta(%d).yr) = %d', ...
-	     sta(i).nYr, i, i, length(sta(i).yrs))
-       end
-    end, clear i j
-    if length(cell2mat({sta.yr})) ~= ...% check all files processed:
-	  length(d)
-       error('%d = length(cell2mat({sta.yr})) ~= length(d) = %d', ...
-	  length(cell2mat({sta.yr})), length(d))
-    end
-    datef = 'mm-dd-yyyy HH:MM    ';	% date format
-    rDate = datenum( ...		% reference date
-       '01-01-2005 00:00', datef);
-    warning('off','MATLAB:xlsreadold:Truncation');
-%     clear tst,n = 1;
-    for i = lSta			% station loop:
-       sta(i).d = struct('hdr', ...	% allocate structure:
-	  cell(1, sta(i).nYr));
-       for j = 1 : sta(i).nYr		% year loop at station i:
-	  m = fullfile(ext, sprintf(...	% reconstruct spreadsheet file name:
-	     '%s_%d.%s', sta(i).name, sta(i).yr(j), ext));
-	  tic
-	  [num, txt] = xlsread(m);	% txt prepends the header row
-% 	  tst{n} = find(cellfun(@(x)~isempty(x),strfind(txt(:,1),'<')));n=n+1;
-	  if ~isempty(num)
-	     sta(i).d(j).nt = ...	% nu. times
-		size(num, 1);
-	     sta(i).d(j).hdr = ...	% header row
-		txt(1, :);
-	     sta(i).d(j).ts = ...	% time string
-		txt(1 + (1 : sta(i).d(j).nt), 1);
-	     sta(i).d(j).note = ...	% foot note:
-		txt(2 + sta(i).d(j).nt : end, 1);
-	     sta(i).d(j).t = cellfun(...% time values:
-		@(x) datenum(x, datef) - rDate, sta(i).d(j).ts);
-	     q = cell2mat(arrayfun(@(x)~isempty(strfind(x{1},'EDT')), sta(i).d(j).ts, 'UniformOutput', false));
-	     sta(i).d(j).t(q) = ...	% convert to GMT:
-		sta(i).d(j).t(q) + 4/24;
-	     q = cell2mat(arrayfun(@(x)~isempty(strfind(x{1},'EST')), sta(i).d(j).ts, 'UniformOutput', false));
-	     sta(i).d(j).t(q) = ...	% convert to GMT:
-		sta(i).d(j).t(q) + 5/24;
-	     sta(i).d(j).qFlg = ...	% quality flag:
-		txt(1 + (1 : sta(i).d(j).nt), ...
-		cellfun(@(x) ~isempty(x), strfind(txt(1, :), 'QFLG')));
-	     txt(:,1) = [];		% delete column 1
-	     for k = 1 : nDat		% data-type loop:
-		l = cellfun( ...	% find column for this type:
-		   @(x) ~isempty(x), strfind(txt(1, :), datList{k}));
-		sta(i).d(j).f(:,k) = ...% get field type k:
-		   num(:, l);
-		sta(i).d(j).u(k) = ...	% get units after 1st ' ':
-		   cellfun(@(x) x(min(strfind(x, ' '))+1 : end), txt(1, l), ...
-		   'UniformOutput', false);
+       for j = 1 : sta(i).nWin		% window loop:
+	  fprintf('Station %5s, window %d requires\n ', sta(i).name, j)
+	  m = reshape(cellfun(@str2num, T(k,2 : 2*nReq - 1)), 2, nReq - 1);
+	  for l = 1 : nDat
+	     f = find(strcmp( ...	% compare to data type list:
+		datList{l}, cellfun(@(x) x(4:end), bReqH(2*(1 : nReq - 1)), 'UniformOutput', false)));
+	     if isempty(f)
+		sta(i).bReqs(1 : 2,l,j) = [-Inf Inf];
+	     else
+		sta(i).bReqs(1 : 2, ...	% min & max values of data:
+		   l,j) = m(:,f);
+		fprintf('%d<=%s<=%d, ', sta(i).bReqs(1,l,j), bReqH{2*f}(4:end), sta(i).bReqs(2,l,j))
+		switch bReqH{2*f}(4:end)% convert units:
+		   case 'wind_speed'	% convert mi/h to m/s:
+		      sta(i).bReqs(:,l,j) = ...
+			 sta(i).bReqs(:,l,j)*1609.344/60^2;
+		   case 'air_temp'		% convert deg F to deg C:
+		      sta(i).bReqs(:,l,j) = ...
+			 (sta(i).bReqs(:,l,j) - 32)*5/9;
+		end
 	     end
-	  else
-	     sta(i).d(j).nt = 0;
 	  end
-	  fprintf('Processing %s took %5.2fs\n', m, toc)
+	  for l = 1 : 2			% start and finish of time window:
+	     [~, sta(i).bmdh{l,1 : 3,j}] = datevec(T{k,2*nReq - 1 + l});
+	  end
+	  k = k + 1;			% point to next row
+	  fprintf('%02d/%02d<=day<=%02d/%02d, %02d<=hour<=%02d.\n', ...
+	     cell2mat(sta(i).bmdh(:,1:2,j))', sta(i).bmdh{:,3,j})
        end
-    end, clear i j k l m num q txt
+       sta(i).bmdh = cell2mat(sta(i).bmdh);
+    end,clear f i j k l m T
+    nDat = length(datList);		% nu. data types
+    for i = lSta			% station loop:
+       %
+       % Read data from spreadsheet for station i:
+       %
+       d = dir(fullfile(ext, sprintf('%s*.%s', sta(i).name,ext)));
+       fprintf('Processing file %35s, %d of %d, takes ', d.name, i, lSta(end))
+       tic
+       f = fopen(fullfile(ext, d.name));
+       for j = 1 : intmax		% loop over metadata rows (starting with '#'):
+	  T = fgetl(f);
+	  if strcmp(T(1), '#')
+	     g = max(find(T==':'));
+	     eval(['sta(i).' matlab.lang.makeValidName(regexprep(T(min(find(T==' ')) + 1 : g - 1),' ','_')) ...
+		'=''' T(g + 2 : end) ''';'])
+	  else
+	     break;			% T is the main data header now
+	  end
+       end
+       sta(i).hdr = T;			% header row
+       T = strsplit(strrep(T, ...	% truncate useless suffices and
+	  '_set_1', ''), ',');		% split strings delimited by ','
+       sta(i).datI = find(cellfun( ...	% data column indexes
+	  @(x) sum(ismember(datList, x)), T));
+       T = strsplit(fgetl(f), ',');	% units row
+       sta(i).u = T(sta(i).datI - 1);
+       T = textscan(f, ['%s%s' ...	% read 2 strings, then some floats, then skip to EOL:
+	  repmat('%f', 1, max(sta(i).datI) - 2) '%*[^\n]'], 'Delimiter', ',');
+       fclose(f);
+       sta(i).t = datenum(T{2}, datef);	% time (days) in column 2
+       % sta(i).yr = unique(num2cell(datestr(sta(i).t, 'yyyy'), 2));
+       sta(i).d = cell2mat( ...		% data in other columns
+	  T(:,sta(i).datI));
+       sta(i).nt = length(sta(i).t);	% nu. times
+       fprintf('%5.1fs\n',toc)
+    end, clear d f i j T
     save(matF)
  else
     tic
@@ -121,129 +125,106 @@
     load(matF)
     fprintf('%5.1fs\n',toc)
  end
+
  %% 
  analXls_figs
  %% 
- d2c = @(x)-[sind(x),cosd(x)];		% direction 2 component transform
- kt = find(strcmp(datList,'TMP'))	% index for relative humidity
- kr = find(strcmp(datList,'RELH'))	% index for relative humidity
- ks = find(strcmp(datList,'SKNT'))	% index for wind speed
- kg = find(strcmp(datList,'GUST'))	% index for wind gust
- kd = find(strcmp(datList,'DRCT'))	% index for wind direction clockwise from north
- datList([kr ks kg kd]) = {... %'LRH'
-    'DWP' 'UWND' 'VWND' 'LGST'};
- bReqs([kg kd],:,:) = ...		% keep SKNT requirement in UWND row of bReqs ...
-    bReqs([kd kg],:,:);			% but swap GUST and DRCT requirements (currently null).
- for i = lSta				% station loop:
-    for j = find(arrayfun(@(x) x.nt > 0, sta(i).d))
-       sta(i).d(j).f(:,kr) = ...	% change RELH to dew point temperature:
-	  RELH2DWT(sta(i).d(j).f(:,kr), sta(i).d(j).f(:,kt));
-% 	  log10(sta(i).d(j).f(:,kr));	% _or_ just take its log10.
-       sta(i).d(j).u{kr} = 'âˆž C';
-       sta(i).d(j).f( ...		% replace DRCT NaNs when SKNT == 0 (DRCT not defined):
-	  sta(i).d(j).f(:,ks) == 0,kd) = 0;
-       sta(i).d(j).f(:,[ks kg kd]) = ...% apply d2c and move GUST -> LGST to end:
-	  [bsxfun(@times, sta(i).d(j).f(:,ks), d2c(sta(i).d(j).f(:,kd))) log10(sta(i).d(j).f(:,kg))];
-       sta(i).d(j).u{kd} = ...		% change label units:
-	  sta(i).d(j).u{ks};
+ n = 1;
+ for i = lSta
+    for l = 1 : sta(i).nWin
+       print(n, '-dpng',sprintf('figures/%s_w%d_data', sta(i).name, l))
+       n = n + 1;
     end
+ end
+%% 
+ d2c = @(x)-[sind(x),cosd(x)];		% direction 2 component transform
+ kt = find(strcmp(datList,'air_temp'))	% index for temperature
+ kr = find(strcmp(datList,'relative_humidity'))
+ ks = find(strcmp(datList,'wind_speed'))% index for wind speed
+ kd = find(strcmp(datList,'wind_direction'))
+ kg = find(strcmp(datList,'wind_gust'))	% index for wind gust
+ datList([kr ks kd kg]) = {... %'LRH'
+    'DWP' 'UWND' 'VWND' 'LGST'};
+ for i = lSta				% station loop:
+    sta(i).d(:,kr) = ...		% change RELH to dew-point temperature:
+       RELH2DWT(sta(i).d(:,kr), sta(i).d(:,kt));
+%      log10(sta(i).d(:,kr));		% _or_ just take its log10.
+    sta(i).u{kr} = 'Celsius';
+    sta(i).d(sta(i).d(:,ks) == 0,kd) ...% replace wind_direction NaNs when wind_direction not defined:
+        = 0;
+    sta(i).d(:,[ks kd kg]) = ...	% apply d2c and GUST -> LGST:
+       [bsxfun(@times, sta(i).d(:,ks), d2c(sta(i).d(:,kd))) log10(sta(i).d(:,kg))];
+    sta(i).u{kd} = sta(i).u{ks};	% change label units
  end,clear d2c i j kd kg kr ks kt
  %% 
  if ~any(strcmp(fieldnames(sta),'mom'))
-    kt = find(strcmp(datList(1 : nDat), 'TMP' ))
+    kt = find(strcmp(datList(1 : nDat), 'air_temp' ))
     kd = find(strcmp(datList(1 : nDat), 'DWP' ))
     ku = find(strcmp(datList(1 : nDat), 'UWND'))
     kv = find(strcmp(datList(1 : nDat), 'VWND'))
-    ib = @(a,x) a(1) < x & x < a(2);	% in-between condition
+    ib = @(a,x) a(1) <= x & x <= a(2);	% in-between condition
     for i = lSta			% station (with burn requirements) loop:
-       sta(i).ags = struct('n', zeros(1, nDat), 'm', zeros(1, nDat), 's', zeros(1, nDat), 'r', zeros(1, nDat*(nDat - 1)/2));
-       for j = 1 : sta(i).nYr		% year loop at station i:
-	  if sta(i).d(j).nt <= 0	% if there aren't times to plot:
-	     fprintf('No times for %s_%d\n', sta(i).name, sta(i).yr(j))
-	     sta(i).mom(j).n = zeros(1, nDat             );
-	     sta(i).mom(j).m = NaN(  1, nDat             );
-	     sta(i).mom(j).s = NaN(  1, nDat             );
-	     sta(i).mom(j).r = NaN(  1, nDat*(nDat - 1)/2);
-	     continue			% re-enter loop at next j value
-	  end
-	  q = any(cell2mat(cellfun(@(x)strcmp(sta(i).d(j).qFlg, x), {'N/A' 'OK'}, 'UniformOutput', false)), 2);
-	  fprintf('%5s_%d %4d days: %4d OK QFLG, ', sta(i).name, sta(i).yr(j), sta(i).d(j).nt, sum(q))
-	  Jan1 = datenum(sprintf('01-01-%4d 00:00', sta(i).yr(j)), datef);
-	  t = (sta(i).d(j).t ...	% months since January 1 00:00
-	     + rDate - Jan1)*12/365;
-	  b = ([datenum(sprintf('%02d-01-%4d 00:00', bReqs(nDat+1,1,i)  , sta(i).yr(j)), datef) ...
-	        datenum(sprintf('%02d-01-%4d 00:00', bReqs(nDat+1,2,i)+1, sta(i).yr(j)), datef) ] ...
-	     - Jan1)*12/365;		% time requirement in months
-	  q = q & b(1) <= t & ...	% not too early, and ...
-	          b(2) >  t;		% ... not too late.
-	  fprintf('%4d OK time, ', sum(q))
-	  q = q & ib(bReqs(kt,:,i), ...	% ... not too hot or cold.
-	             sta(i).d(j).f(:,kt));
-	  fprintf('%4d OK %s, ', sum(q), datList{kt})
-	  q = q & ib(bReqs(kd,:,i), ...	% ... not too wet or dry.
-	             RELH2DWT(sta(i).d(j).f(:,kd), sta(i).d(j).f(:,kt), -1));
-	  fprintf('%4d OK RELH, ', sum(q))
-	  q = q & ib(bReqs(ku,:,i), ...	% ... not too fast or slow.
-	             sqrt(sum(sta(i).d(j).f(:,[ku kv]).^2, 2)));
-          fprintf('%4d OK SKNT, ', sum(q))
-	  q = bsxfun(@and, q, isfinite(sta(i).d(j).f));
-	  sta(i).mom(j).n = sum(q);	% nu. times meeting criteria for each field
-          fprintf('[%s\b] finite values\n', sprintf('%3d ', sta(i).mom(j).n))
-	  sta(i).ags.n = sta(i).ags.n + sta(i).mom(j).n;
+       [~, d{1 : 3}] = datevec(sta(i).t);
+       for l = 1 : sta(i).nWin		% window loop at station i:
+	  %
+	  % logical f tests the burn requirements:
+	  %
+          f = ib(sta(i).bmdh( :, 1,l), d{1}) & ...
+	      ib(sta(i).bmdh( :, 2,l), d{2}) & ...
+	      ib(sta(i).bmdh( :, 3,l), d{3});
+	  fprintf('%5s window %d, %4d potential days: ', sta(i).name, l, sum(f))
+	  %
+	  % not too hot or cold:
+	  %
+	  f = f & ib(sta(i).bReqs(:,kt,l), sta(i).d(:,kt));
+	  fprintf('%4d OK air_temp, ', sum(f))
+	  %
+	  % not too wet or dry:
+	  %
+	  f = f & ib(sta(i).bReqs(:,kd,l), RELH2DWT(sta(i).d(:,kd), sta(i).d(:,kt), -1));
+	  fprintf('%4d OK relative_humidity, ', sum(f))
+	  %
+	  % not too fast or slow:
+	  %
+	  f = f & ib(sta(i).bReqs(:,ku,l), sqrt(sum(sta(i).d(:,[ku kv]).^2, 2)));
+          fprintf('%4d OK wind_speed, ', sum(f))
+	  f = bsxfun(@and, f, isfinite(sta(i).d));
+	  %
+	  % sample size n, mean m, std dev s, correlation r:
+	  %
+	  sta(i).mom(l).n = sum(f);
+	  sta(i).mom(l).m = NaN(  1, nDat             );
+	  sta(i).mom(l).s = NaN(  1, nDat             );
+	  sta(i).mom(l).r = NaN(  1, nDat*(nDat - 1)/2);
+          fprintf('[%s\b] finite values\n', sprintf('%3d ', sta(i).mom(l).n))
 	  for k = 1 : nDat
-	     if sta(i).mom(j).n(k) > 0
-		sta(i).mom(j).m(k) = sum(sta(i).d(j).f(q(:,k),k))/sta(i).mom(j).n(k);
-		sta(i).ags.m(k) = ((sta(i).ags.n(k) - sta(i).mom(j).n(k))*sta(i).ags   .m(k) + ...
-		                                      sta(i).mom(j).n(k) *sta(i).mom(j).m(k))/sta(i).ags.n(k);
-	     else
-		sta(i).mom(j).m(k) = NaN;
+	     if sta(i).mom(l).n(k) > 0
+		%
+		% Compute the mean:
+		%
+		sta(i).mom(l).m(k) = sum(sta(i).d(f(:,k),k))/sta(i).mom(l).n(k);
 	     end
-	     if sta(i).mom(j).n(k) > 1
-		sta(i).mom(j).s(k) = sqrt(sum((sta(i).d(j).f(q(:,k),k) - sta(i).mom(j).m(k)).^2)/(sta(i).mom(j).n(k) - 1));
-	        sta(i).ags.s(k) = ((sta(i).ags.n(k) - sta(i).mom(j).n(k) - 1)*sta(i).ags   .s(k)   + ...
-	                           (                  sta(i).mom(j).n(k) - 1)*sta(i).mom(j).s(k)^2) ...
-	                           /(sta(i).ags.n(k) - 1);
-		if sta(i).ags.n(k) > sta(i).mom(j).n(k)
-		   sta(i).ags.s(k) = sta(i).ags.s(k) + ...
-		      (sta(i).mom(j).n(k)*sta(i).ags.n(k)/(sta(i).ags.n(k) - sta(i).mom(j).n(k))) * ...
-		      (sta(i).mom(j).m(k) - sta(i).ags.m(k))^2/(sta(i).ags.n(k) - 1);
-		end
-	     else
-		sta(i).mom(j).s(k) = NaN;
+	     if sta(i).mom(l).n(k) > 1
+		%
+		% Compute the std dev:
+		%
+		sta(i).mom(l).s(k) = sqrt(sum((sta(i).d(f(:,k),k) - sta(i).mom(l).m(k)).^2)/(sta(i).mom(l).n(k) - 1));
 	     end
 	  end
 	  m = 0;
 	  for k = 1 : nDat - 1
-	     for l = k + 1 : nDat
+	     for j = k + 1 : nDat
 		m = m + 1;
-		if all(sta(i).mom(j).n([k l]) > 1)
-		   sta(i).mom(j).r(m) = sum( ...
-		      (sta(i).d(j).f(q(:,k) & q(:,l),k) - sta(i).mom(j).m(k))  ...
-		    .*(sta(i).d(j).f(q(:,k) & q(:,l),l) - sta(i).mom(j).m(l))) ...
-		        /((sum(q(:,k) & q(:,l)) - 1) * sta(i).mom(j).s(k) * sta(i).mom(j).s(l));
-	           sta(i).ags.r(m) = ((sta(i).ags.n(k) - sta(i).mom(j).n(k) - 1)*sta(i).ags   .r(m) + ...
-	                              (                  sta(i).mom(j).n(k) - 1)*sta(i).mom(j).s(k)*sta(i).mom(j).s(l)*sta(i).mom(j).r(m)) ...
-				  /(sta(i).ags.n(k) - 1);
-		   if sta(i).ags.n(k) > sta(i).mom(j).n(k)
-		      sta(i).ags.r(m) = sta(i).ags.r(m) + ...
-	                 (sta(i).mom(j).n(k)*sta(i).ags.n(k)/(sta(i).ags.n(k) - sta(i).mom(j).n(k))) * ...
-			 (sta(i).mom(j).m(k) - sta(i).ags.m(k))*(sta(i).mom(j).m(l) - sta(i).ags.m(l))/(sta(i).ags.n(k) - 1);
-		   end
-		else
-		   sta(i).mom(j).r(m) = NaN;
+		if all(sta(i).mom(l).n([k j]) > 1)
+		   sta(i).mom(l).r(m) = sum( ...
+		      (sta(i).d(f(:,k) & f(:,j),k) - sta(i).mom(l).m(k)) ...
+		    .*(sta(i).d(f(:,k) & f(:,j),j) - sta(i).mom(l).m(j))) ...
+		     /((sum(f(:,k) & f(:,j)) - 1) * sta(i).mom(l).s(k) * sta(i).mom(l).s(j));
 		end
 	     end
 	  end
        end
-       sta(i).ags.s = sqrt(sta(i).ags.s);
-       m = 0;
-       for k = 1 : nDat - 1
-	  for l = k + 1 : nDat
-	     m = m + 1;
-	     sta(i).ags.r(m) = sta(i).ags.r(m)/(sta(i).ags.s(k)*sta(i).ags.s(l));
-	  end
-       end
-    end, clear b i ib j Jan1 k kd kt ku kv l m q t
+    end, clear f i ib j k kd kt ku kv l m
  end
  %% 
  analXls_stats
@@ -251,4 +232,4 @@
  analXls_Mdists
  %% 
  tLim = [min(arrayfun(@(x)min(cell2mat(arrayfun(@(y) min(y.t), x.d, 'UniformOutput', false))), sta))
-         max(arrayfun(@(x)max(cell2mat(arrayfun(@(y) max(y.t), x.d, 'UniformOutput', false))), sta))] + rDate;
+         max(arrayfun(@(x)max(cell2mat(arrayfun(@(y) max(y.t), x.d, 'UniformOutput', false))), sta))];

@@ -1,62 +1,62 @@
 
-% Author: Aimé Fournier
+% Author: Aime' Fournier
 
- figure(11 + lSta(end))
+ figure(sum(cell2mat({sta.nWin})) + 1)
  clf
+ n = 0;
  for i = lSta				% station loop:
-    cm = colormap(jet(sta(i).nYr));	% color for each year
-    p = zeros(nDat);
-    m = 0;
-    for k = 1 : nDat - 1		% row loop:
-       for l = k + 1 : nDat		% upper triangle:
-	  m = m + 1;
-	  p(k,l) = sta(i).ags.r(m);	% corr(f(k),f(l))
+    yr = datevec(min(sta(i).t)) : datevec(max(sta(i).t));
+    nYr = length(yr);
+    cm = colormap(jet(nYr));		% color for each year
+    for l = 1 : sta(i).nWin
+       n = n + 1;
+       subplot(sum(cell2mat({sta.nWin})), 1, n)
+       p = zeros(nDat);
+       m = 0;
+       for k = 1 : nDat - 1		% row loop:
+	  for j = k + 1 : nDat		% upper triangle:
+	     m = m + 1;
+	     p(k,j) = ...		% corr(f(k),f(l))
+		sta(i).mom(l).r(m);
+	  end
+       end,clear j k m
+       q = diag(sta(i).mom(l).s);	% std(f)
+       p = q*(p + p' + eye(nDat))*q;	% cov(f)
+%        disp(norm(p - p', 1)/norm(p, 1))
+%        fprintf('%5s min eigenvalue %9.1e\n', sta(i).name, min(eig(p)))
+       p = chol(inv(p), 'lower');	% p*p' is the precision matrix
+       r = sqrt(sum(((sta(i).d - repmat(sta(i).mom(l).m, sta(i).nt, 1))*p).^2, 2));
+       [~,j] = sort(r); j = j(1 : 64); k = datestr(sta(i).t(j), datef);
+       writetable(table(r(j), k, 'VariableNames', {'M_dev' 'time'}), ...
+	  sprintf('txt/M_%s-%d.txt',sta(i).name,l))
+       j = find(isfinite(r));		% LGST can be -Inf
+       [sta(i).Md(1,2,l) sta(i).Md(1,1,l)] = min(r(j));
+       [sta(i).Md(2,2,l) sta(i).Md(2,1,l)] = max(r(j));
+       sta(i).Md(:,1,l) = sta(i).t(j(sta(i).Md(:,1,l)));
+       for k = 1 : 2
+	  j = datevec(sta(i).Md(k,1,l));
+	  sta(i).Md(k,3,l) = (sta(i).Md(k,1,l) - ...
+	     datenum(sprintf('%4d-01-01T00:00:00Z', j(1)), datef))*12/365;
        end
-    end
-    q = diag(sta(i).ags.s);		% std(f)
-    p = q*(p + p' + eye(nDat))*q;	% cov(f)
-%     disp(norm(p-p',1)/norm(p,1))
-%     fprintf('%5s min eigenvalue %9.1e\n', sta(i).name, min(eig(sta(i).cov)))
-    p = chol(inv(p), 'lower');		% p*p' is the precision matrix
-    subplot(length(lSta), 1, i)
-    sta(i).Md(5:6) = [Inf,-Inf];	% initialize extreme values
-    for j = 1 : sta(i).nYr		% year loop at station i:
-       q = any(cell2mat(cellfun(@(x)strcmp(sta(i).d(j).qFlg, x), {'N/A' 'OK'}, 'UniformOutput', false)), 2);
-       if ~any(q)			% not even 1 'OK' or 'N/A' datum
-	  fprintf('Not even 1 ''OK'' or ''N/A'' datum for %5s_%d\n', sta(i).name, sta(i).yr(j))
-	  continue
+       for j = 1 : nYr			% year loop at station i:
+	  Jan1 = datenum(sprintf('%4d-01-01T00:00:00Z', yr(j)), datef);
+	  t = (sta(i).t - Jan1)*12/365;	% months since January 1 00:00
+	  f = isfinite(r) & 0 <= t & t < 12;
+	  line(t(f), r(f), 'Color', cm(j,:), 'DisplayName', sprintf('{\\ity}=%d', yr(j)), 'LineStyle', 'none', 'Marker', '.')
+       end,clear f j Jan1 t
+       line(sta(i).Md(1,3,l), sta(i).Md(1,2,l), 'DisplayName', 'min', 'LineStyle', 'none', 'Marker', 'v', 'MarkerSize', 2^3)
+       line(sta(i).Md(2,3,l), sta(i).Md(2,2,l), 'DisplayName', 'max', 'LineStyle', 'none', 'Marker', '^', 'MarkerSize', 2^3)
+       set(gca, 'YScale', 'log', 'YTick', 2.^(floor(log2(sta(i).Md(1,2,l))) : 2 : ceil(log2(sta(i).Md(2,2,l)))))
+       axis tight
+       legend('Location','eastoutside')
+       [u{1:4}] = datevec(sta(i).Md(1,1,l));
+       [v{1:4}] = datevec(sta(i).Md(2,1,l));
+       title(sprintf( ...
+	  '{\\it\\delta}[%d,%d,%d,%d] = %5.2f \\leq (%5s-%d %d:%d M-dev. {\\it\\delta}[{\\ity},{\\itm},{\\itd},{\\ith}]) \\leq {\\it\\delta}[%d,%d,%d,%d] = %5.2f', ...
+	  u{:}, sta(i).Md(1,2,l), sta(i).name, l, yr([1 end]), v{:}, sta(i).Md(2,2,l)))
+       if i == lSta(end) & l == sta(i).nWin
+	  xlabel('months since January 1 00:00')
        end
-       r = sqrt(sum(((sta(i).d(j).f - repmat(sta(i).ags.m, sta(i).d(j).nt, 1))*p).^2, 2));
-       q = q & isfinite(r);		% LGST can be -Inf
-       r = r(q);
-       Jan1 = datenum(sprintf('01-01-%4d 00:00', sta(i).yr(j)), datef);
-       t = (sta(i).d(j).t(q) + rDate ...% months since January 1 00:00
-	  - Jan1)*12/365;
-       [u v] = min(r);
-       if u < sta(i).Md(5)
-	  sta(i).Md(5) = u;
-	  sta(i).Md(3) = t(v);
-	  sta(i).Md(1) = sta(i).yr(j);
-       end
-       [u v] = max(r);
-       if u > sta(i).Md(6)
-	  sta(i).Md(6) = u;
-	  sta(i).Md(4) = t(v);
-	  sta(i).Md(2) = sta(i).yr(j);
-       end
-       line(t, r, 'Color', cm(j,:), 'DisplayName', sprintf('{\\ity}=%d', sta(i).yr(j)), 'LineStyle', 'none', 'Marker', '.')
-    end
-    line(sta(i).Md(3), sta(i).Md(5), 'DisplayName', 'min', 'LineStyle', 'none', 'Marker', 'v', 'MarkerSize', 2^3)
-    line(sta(i).Md(4), sta(i).Md(6), 'DisplayName', 'max', 'LineStyle', 'none', 'Marker', '^', 'MarkerSize', 2^3)
-    set(gca, 'YScale', 'log', 'YTick', 2.^(floor(log2(sta(i).Md(5))) : 2 : ceil(log2(sta(i).Md(6)))))
-    axis tight
-    legend('Location','eastoutside')
-    title(sprintf('{\\itd}[%d,%5.2f] = %5.2f \\leq (%5s\\_%d:%d Mahalanobis distance {\\itd}[{\\ity},{\\itt}] from {\\it\\mu}) \\leq {\\itd}[%d,%5.2f] = %5.2f', ...
-       sta(i).Md([1 3 5]), sta(i).name, sta(i).yr([1 end]), sta(i).Md([2 4 6])))
-    if i == lSta(end)
-       xlabel('{\itt} = months since January 1 00:00')
     end
  end, clear i j k l m p q r t u v
- orient landscape
-%  arrayfun(@(x)norm(x.cov-x.cov',1)/norm(x.cov,1),sta)
-%  arrayfun(@(x)min(eig(x.cov)),sta)
+ orient tall
