@@ -24,9 +24,10 @@ for i=1:nfiles
         error(['Variable ',vars{1},' not found.'])
     end
 end
-fprintf('Times steps: '),disp(tsteps)
-fprintf('Cumulative: '),disp(cumsum(tsteps))
+fprintf('Time steps:'),disp(tsteps)
 tstart=[1,1+cumsum(tsteps)];
+ntimesteps=tstart(nfiles+1)-1;
+fprintf('Total number of time steps %d\n',ntimesteps)
 
 dom=load_domain(file{nfiles});
 p = nc2struct(file{nfiles},{'FIRE_AREA'},{},tsteps(nfiles));
@@ -39,16 +40,19 @@ jend   = min(jsize,max(j)+5);
 fprintf('Interested in indices [ %d : %d ] x [%d: %d]\n',istart,iend,jstart,jend)
 for j=1:length(vars),
     lvars{j}=lower(vars{j});
-    s.(lvars{j})=zeros(iend-istart+1,jend-jstart+1,tstart(nfiles+1)-1);
+    s.(lvars{j})=zeros(iend-istart+1,jend-jstart+1,ntimesteps);
 end    
+dom.times=char(zeros(ntimesteps,19));
 for i=1:nfiles
     start=[istart-1,jstart-1,0];
     count=[iend-istart+1,jend-jstart+1,tsteps(i)];
     for j=1:length(vars),
         fprintf('Reading slice of %s from file %d %s\n',vars{j},i,file{i})
         p=ncvar(file{i},vars{j},start,count);
-        s.(lvars{j})(:,:,tstart(i):tstart(i+1)-1)=p.var_value;
+        tspan=tstart(i):tstart(i+1)-1;
+        s.(lvars{j})(:,:,tspan)=p.var_value;
     end
+    dom.times(tspan,:)=char(ncread(file{i},'Times'))';
 end
 dom.sub=s;
 dom.ii=[istart:iend];
