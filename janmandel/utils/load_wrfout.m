@@ -4,7 +4,9 @@ function dom=load_wrfout(search,base)
 if ~exist('base','var')
     base='.';
 end
-f = dir(fullfile(base,search));
+path=fullfile(base,search);
+fprintf('Searching for %s\n',path)
+f=dir(path);
 nfiles = length(f);
 if ~nfiles>0,
     error('No files found')
