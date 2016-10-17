@@ -1,4 +1,4 @@
-% function dom=load_wrfout(base,search)
+function dom=load_wrfout(base,search)
 f = dir(fullfile(base,search));
 nfiles = length(f);
 % get numbers of timesteps
@@ -12,7 +12,7 @@ for i=1:nfiles
     end
 end
 tstart=[1,1+cumsum(tsteps)];
-dom=load_domain(lastfile);
+dom=load_domain(file{nfiles});
 p = nc2struct(file{nfiles},{'FIRE_AREA'},{},tsteps(nfiles));
 [isize,jsize]=size(p.fire_area);
 [i,j,v]=find(p.fire_area);
