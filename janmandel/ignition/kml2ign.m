@@ -1,4 +1,4 @@
-function ign=kml2tign(k,dom)
+function ign=kml2ign(k,dom)
 % tign=kml2tign(k,dom)
 % build list of igniton points
 %
@@ -44,8 +44,8 @@ end
 % add ROS and ignition radius
 ign=ign(ii);
 for i=1:length(ign)
-    ign(i).ros=1;
-    ign(i).radius=200;
+    ign(i).ros=0.5;
+    ign(i).radius=50;
 end
 
 % starting igntion time
