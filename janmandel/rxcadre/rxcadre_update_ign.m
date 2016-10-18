@@ -1,5 +1,5 @@
 function ign_out=rxcadre_update_ignition(ign,dom)
-start_times=char(dom.times');
+start_times=char(dom.times(1,:));
 start_datenum=datenum(start_times);
 rxcadre_datenum=datenum(2012,11,11);
 fprintf('Simulation start %s\n',datestr(start_datenum));
