@@ -40,7 +40,11 @@ for i=startframe:min(endframe,nframes)
     val(val==0)==NaN;
     hp=pcolor(long(ispan,jspan),lat(ispan,jspan),val(ispan,jspan));
     set(hp,'EdgeAlpha',0);
+    caxis([0,1e5]);
     h=colorbar;
+    hold on
+    plot3_ign(ign,t_sec,'m.',2);
+    hold off
     ylabel(h,'Heat flux (W/m^2)');
     title(tstring)
     M1(i-startframe+1)=getframe(gcf);
@@ -68,14 +72,23 @@ for i=startframe:min(endframe,nframes)
     title([tstring,' Fire arrival time'])
     hold on
     contour3(long(ispan,jspan),lat(ispan,jspan),val(ispan,jspan),[t_sec t_sec],'k');
-    plot3_ign(ign,t_sec,'r.');
+    plot3_ign(ign,t_sec,'r.',3);
     hold off
     M4(i-startframe+1)=getframe(gcf);
 
+    figure(5)
+    val=dom.sub.fire_area(:,:,i);
+    pcolor(long(ispan,jspan),lat(ispan,jspan),val(ispan,jspan));
+    hold on
+    contour(long(ispan,jspan),lat(ispan,jspan),val(ispan,jspan),[0 0],'k');
+    title([tstring,' Fire area'])
+    plot3_ign(ign,t_sec,'r.',2);
+    hold off
+    M5(i-startframe+1)=getframe(gcf);
     drawnow
     pause(0.1)
 end
 
-movies={M1,M2,M3,M4};
+movies={M1,M2,M3,M4,M5};
 end
 
