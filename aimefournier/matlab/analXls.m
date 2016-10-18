@@ -2,7 +2,7 @@
 % File:		analXls.m
 % Purpose:	Analyze .xlsx spreadsheets as described below.
 
- clear
+%  clear
 %
 % The intention is to run this script section-by-section (between "%%") from
 % the Matlab editor using the Command-Enter keystroke;
@@ -21,6 +21,7 @@
     datef = 'yyyy-mm-ddTHH:MM:SSZ';	% date format
     datList = {'air_temp' ...		% data types of interest
        'relative_humidity' 'wind_speed' 'wind_direction' 'wind_gust'};
+    nDat = length(datList);
     % datList = {'TMP' 'RELH' 'SKNT' 'GUST' 'DRCT'};
     %
     % Below here, everything should work automatically...
@@ -132,7 +133,7 @@
  n = 1;
  for i = lSta
     for l = 1 : sta(i).nWin
-       print(n, '-dpng',sprintf('figures/%s_w%d_data', sta(i).name, l))
+       print(n, '-dpng', sprintf('figures/%s_w%d_data', sta(i).name, l))
        n = n + 1;
     end
  end
@@ -172,7 +173,7 @@
           f = ib(sta(i).bmdh( :, 1,l), d{1}) & ...
 	      ib(sta(i).bmdh( :, 2,l), d{2}) & ...
 	      ib(sta(i).bmdh( :, 3,l), d{3});
-	  fprintf('%5s window %d, %4d potential days: ', sta(i).name, l, sum(f))
+	  fprintf('%5s, %4dd in window %d: ', sta(i).name, sum(f), l)
 	  %
 	  % not too hot or cold:
 	  %
@@ -202,34 +203,37 @@
 		%
 		% Compute the mean:
 		%
-		sta(i).mom(l).m(k) = sum(sta(i).d(f(:,k),k))/sta(i).mom(l).n(k);
+		sta(i).mom(l).m(k) = mean(sta(i).d(f(:,k),k));
+% 	     else
+% 		fprintf('%s-%d %s has no data\n', sta(i).name, l, datList{k})
 	     end
 	     if sta(i).mom(l).n(k) > 1
 		%
 		% Compute the std dev:
 		%
-		sta(i).mom(l).s(k) = sqrt(sum((sta(i).d(f(:,k),k) - sta(i).mom(l).m(k)).^2)/(sta(i).mom(l).n(k) - 1));
+		sta(i).mom(l).s(k) = std(sta(i).d(f(:,k),k));
+% 	     else
+% 		fprintf('%s-%d %s has one datum\n', sta(i).name, l, datList{k})
 	     end
 	  end
 	  m = 0;
-	  for k = 1 : nDat - 1
-	     for j = k + 1 : nDat
-		m = m + 1;
-		if all(sta(i).mom(l).n([k j]) > 1)
-		   sta(i).mom(l).r(m) = sum( ...
-		      (sta(i).d(f(:,k) & f(:,j),k) - sta(i).mom(l).m(k)) ...
-		    .*(sta(i).d(f(:,k) & f(:,j),j) - sta(i).mom(l).m(j))) ...
-		     /((sum(f(:,k) & f(:,j)) - 1) * sta(i).mom(l).s(k) * sta(i).mom(l).s(j));
+	  g = logical(prod(f, 2));
+	  if sum(g) > 1
+	     for k = 1 : nDat - 1
+		for j = k + 1 : nDat
+		   m = m + 1;
+		   a = corrcoef(sta(i).d(g,k), sta(i).d(g,j));
+% 		   fprintf('%s-%d minimum eigenvalue %9.2g\n', sta(i).name, l, min(eig(g)))
+		   sta(i).mom(l).r(m) = [1 0]*a*[0;1];
+% 		else
+% 		   fprintf('%s-%d %s is uncorrelated with %s\n', sta(i).name, l, datList{k}, datList{j})
 		end
 	     end
 	  end
        end
-    end, clear f i ib j k kd kt ku kv l m
+    end, clear a f g i ib j k kd kt ku kv l m
  end
  %% 
  analXls_stats
  %% 
  analXls_Mdists
- %% 
- tLim = [min(arrayfun(@(x)min(cell2mat(arrayfun(@(y) min(y.t), x.d, 'UniformOutput', false))), sta))
-         max(arrayfun(@(x)max(cell2mat(arrayfun(@(y) max(y.t), x.d, 'UniformOutput', false))), sta))];

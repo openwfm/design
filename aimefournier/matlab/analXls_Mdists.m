@@ -4,6 +4,7 @@
  figure(sum(cell2mat({sta.nWin})) + 1)
  clf
  n = 0;
+ clear j
  for i = lSta				% station loop:
     yr = datevec(min(sta(i).t)) : datevec(max(sta(i).t));
     nYr = length(yr);
@@ -23,7 +24,11 @@
        q = diag(sta(i).mom(l).s);	% std(f)
        p = q*(p + p' + eye(nDat))*q;	% cov(f)
 %        disp(norm(p - p', 1)/norm(p, 1))
-%        fprintf('%5s min eigenvalue %9.1e\n', sta(i).name, min(eig(p)))
+       [r j] = eig(p,'vector');        if min(j)<=0
+	  fprintf('%5s-%d %9.1e <=  eigenvalues <= %9.1e rectified.\n', sta(i).name, l, min(j), max(j))
+ 	  r = r*diag(1./sqrt(diag(r'*r)));
+	  p = r*diag(max(min(j(j>0)),j))*r';
+       end
        p = chol(inv(p), 'lower');	% p*p' is the precision matrix
        r = sqrt(sum(((sta(i).d - repmat(sta(i).mom(l).m, sta(i).nt, 1))*p).^2, 2));
        [~,j] = sort(r); j = j(1 : 64); k = datestr(sta(i).t(j), datef);
