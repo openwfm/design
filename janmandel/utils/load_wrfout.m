@@ -31,10 +31,13 @@ tstart=[1,1+cumsum(tsteps)];
 ntimesteps=tstart(nfiles+1)-1;
 fprintf('Total number of time steps %d\n',ntimesteps)
 
-dom=load_domain(file{nfiles});
+dom=load_domain(file{1});
 p = nc2struct(file{nfiles},{'FIRE_AREA'},{},tsteps(nfiles));
 [isize,jsize]=size(p.fire_area);
 [i,j,v]=find(p.fire_area);
+if isempty(v),
+    error('no fire yet, check later')
+end
 istart = max(1,min(i)-5);
 iend   = min(isize,max(i)+5);
 jstart = max(1,min(j)-5);
