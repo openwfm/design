@@ -16,6 +16,9 @@
 	  text(.1, .5, sprintf('%s-%d has too few burn days.', sta(i).name, l), 'FontSize', 20)
 	  axis off
        else
+	  %
+	  % Assign the strictly upper triangular correlation matrix:
+	  %
 	  p = zeros(nDat);
 	  m = 0;
 	  for k = 1 : nDat - 1		% row loop:
@@ -25,14 +28,17 @@
 		   sta(i).mom(l).r(m);
 	     end
 	  end,clear j k m
-	  q = diag(sta(i).mom(l).s);	% std(f)
-	  p = q*(p + p' + eye(nDat))*q;	% cov(f)
+	  q = diag(sta(i).mom(l).s);	% std(d)
+	  %
+	  % Add the id and lower triangle, and multiply in the std:
+	  %
+	  p = q*(p + p' + eye(nDat))*q;	% cov(d)
 % 	  disp(norm(p - p', 1)/norm(p, 1))
           [r j] = eig(p,'vector');
-	  if min(j)<=0
+	  if min(j)<=0			% suspect spurious correlations
 	     fprintf('%5s-%d %9.1e <=  eigenvalues <= %9.1e rectified.\n', sta(i).name, l, min(j), max(j))
 	     [r j] = deal(r(:,j > 0), j(j > 0));
-	     p = r*diag(sqrt(j));
+	     p = r*diag(1./sqrt(j));	% p*p' is the precision matrix orthogonal to the singular directions
 	  else
 	     p = chol(inv(p), 'lower');	% p*p' is the precision matrix
 	  end
