@@ -1,17 +1,30 @@
-function rD=rLHS(D,r)
+function P=rLHS(D,r)
 % rD=rLHS(D)
 % Repeated Latin Hypercube Sampling
 % input:
-%       D matrix size (N,L)
+%       D matrix size (L,N)
 %         the range of values of input I=1:L is decomposed 
 %         in N disjoint intervals such that
 %         Pr( input I in interval J for input I  ) = 1/N
-%         D(J,I) is a sampling point from interval J for input I
+%         D(I,J) is a sampling point for input I from interval J 
 %       r the number of repetitions
 %
 %  returns:
-%       rD matrix size (r*N,L)
-%          each row of rD is one vector of input parameters to run
+%       P matrix size (L,N,r)
+%          each P(:,j,k) is one vector of input parameters to run
+%          delivering Y(j,k) which can be analyzed by effect
+%
+%  example:
+%       P = rLHS(equaln(mean_vec,std_vec,N),r)
+%
+%       2 factors with 0 mean and deviation 1 and 3 respectively
+%       5 sample values for each
+%       repeated 4 times
+%       P = rLHS(equaln([0,0],[1,3],5),4)
+%       and matrix with each parameter vector as column
+%       reshape(rD,2,[])
+%  
+%  experiment should deliver output y(j,k) from input parameters rD(
 %
 % Reference:
 % McKay, M. D., 1995: Evaluating prediction uncertainty. 
@@ -20,11 +33,11 @@ function rD=rLHS(D,r)
 % http://www.iaea.org/inis/collection/NCLCollectionStore/_Public/26/051/26051087.pdf
 % page 24
 
-[N,L]=size(D);
-rD=zeros(r*N,L);
-for I=1:L
-    for K=1:r
-        rD(1+(K-1)*N:K*N,I)=D(randperm(N)',I);
+[L,N]=size(D);
+P=zeros(L,N,r);
+for k=1:r
+    for j=1:L
+        P(j,:,k)=D(j,randperm(N));
     end
 end
 end
