@@ -3,7 +3,8 @@
 
  n = 1;
  for i = lSta				% station (with burn requirements) loop:
-    yr = datevec(min(sta(i).t)) : datevec(max(sta(i).t));
+    yr = datevec(min(sta(i).t)) : ...
+         datevec(max(sta(i).t));	% years for station i
     nYr = length(yr);
     cm = colormap(jet(nYr));		% color for each year
     for l = 1 : sta(i).nWin
@@ -11,6 +12,9 @@
        set(gcf, 'Units', 'normalized', 'OuterPosition', [1/8 0 7/8 1], 'Units', 'pixels')
        clf
        [d{1 : 4}] = datevec(sta(i).t);
+       %
+       % Enforce mont-day-hour conditions:
+       %
        f = find(sta(i).bmdh(1,1,l) <= d{2}                       & ...
 		                      d{2} <= sta(i).bmdh(2,1,l) & ...
 		sta(i).bmdh(1,2,l) <= d{3}                       & ...
