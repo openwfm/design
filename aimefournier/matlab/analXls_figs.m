@@ -13,7 +13,7 @@
        clf
        [d{1 : 4}] = datevec(sta(i).t);
        %
-       % Enforce mont-day-hour conditions:
+       % Enforce month-day-hour conditions:
        %
        f = find(sta(i).bmdh(1,1,l) <= d{2}                       & ...
 		                      d{2} <= sta(i).bmdh(2,1,l) & ...
