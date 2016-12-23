@@ -257,8 +257,8 @@
 		      if k == 1
 			 title(sprintf('Station %s window %d', sta(i).name, l))
 		      end
-		      xlabel(strrep(datList{j}, '_', '\_'))
-		      ylabel(strrep(datList{k}, '_', '\_'))
+		      xlabel(sprintf('%s (%s)', strrep(datList{j}, '_', '\_'), sta(i).u{j}))
+		      ylabel(sprintf('%s (%s)', strrep(datList{k}, '_', '\_'), sta(i).u{k}))
 		   else
 		      set(gca, 'XTickLabel', '', 'YTickLabel', '')
 		   end
@@ -271,7 +271,7 @@
 	     print(n, '-dpng', sprintf('figures/%s_w%d_scat', sta(i).name, l))
 	     n = n + 1;
 	  else
-	     fprintf('%s_%d has no good data\n', sta(i).name, l)
+	     fprintf('\n%s_%d has no good data\n\n', sta(i).name, l)
 	  end
        end
     end, clear a f g i ib j k kd kt ku kv l m
