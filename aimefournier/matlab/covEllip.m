@@ -47,4 +47,4 @@
  x = repmat(m(:), 1, n + 1) + v*diag(1./sqrt(diag(d)))*[cos(u)
                                                         sin(u)];
 % line(u, x')
- line(x(1,:), x(2,:))
+ h = line(x(1,:), x(2,:));
