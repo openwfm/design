@@ -283,3 +283,5 @@
 %  analXls_stats
  %% 
  analXls_Mdists
+ %% 
+ analXls_Mhists

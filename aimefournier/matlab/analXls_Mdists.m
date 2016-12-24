@@ -48,20 +48,23 @@
 	  %
 	  % Time series of Mahalanobis distances from the mean:
 	  %
-	  r = sqrt(sum(((sta(i).d - repmat(sta(i).mom(l).m, sta(i).nt, 1))*p).^2, 2));
-	  [~, j] = sort(r);
-	  j = j(1 : 32);
+	  sta(i).Mds{l} = sqrt(sum(((sta(i).d - repmat(sta(i).mom(l).m, sta(i).nt, 1))*p).^2, 2));
+% 	  [~, j] = sort(sta(i).Mds{l});
+% 	  j = j(1 : 32);
+% 	  %
+% 	  % Write some smallest values:
+% 	  %
+% 	  writetable(table(sta(i).Mds{l}(j), datestr(sta(i).t(j), datef), 'VariableNames', {'M_dev' 'time'}), ...
+% 	     sprintf('txt/M_%s-%d.txt',sta(i).name,l))
+          %
+	  % LGST can be -Inf:
 	  %
-	  % Write some largest values:
-	  %
-	  writetable(table(r(j), datestr(sta(i).t(j), datef), 'VariableNames', {'M_dev' 'time'}), ...
-	     sprintf('txt/M_%s-%d.txt',sta(i).name,l))
-          j = find(isfinite(r));	% LGST can be -Inf
+	  j = find(isfinite(sta(i).Mds{l}));
 	  %
 	  % Extrema of Mahalanobis distance:
 	  %
-	  [sta(i).Md(1,l) sta(i).Mt(1,l)] = min(r(j));
-	  [sta(i).Md(2,l) sta(i).Mt(2,l)] = max(r(j));
+	  [sta(i).Md(1,l) sta(i).Mt(1,l)] = min(sta(i).Mds{l}(j));
+	  [sta(i).Md(2,l) sta(i).Mt(2,l)] = max(sta(i).Mds{l}(j));
 	  sta(i).Mt(:,l) = sta(i).t(j(sta(i).Mt(:,l)));
 	  for k = 1 : 2			% min-max loop:
 	     sta(i).Mm(k,l) = (sta(i).Mt(k,l) - ...
@@ -70,8 +73,8 @@
 	  for j = 1 : nYr			% year loop at station i:
 	     Jan1 = datenum(sprintf('%4d-01-01T00:00:00Z', yr(j)), datef);
 	     t = (sta(i).t - Jan1)*12/365;	% months since January 1 00:00
-	     f = isfinite(r) & 0 <= t & t < 12;
-	     line(t(f), r(f), 'Color', cm(j,:), 'DisplayName', ...
+	     f = isfinite(sta(i).Mds{l}) & 0 <= t & t < 12;
+	     line(t(f), sta(i).Mds{l}(f), 'Color', cm(j,:), 'DisplayName', ...
 		sprintf('{\\ity}=%d', yr(j)), 'LineStyle', 'none', 'Marker', '.')
 	  end,clear f j Jan1 t
 	  line(sta(i).Mm(1,l), sta(i).Md(1,l), 'DisplayName', 'min', 'LineStyle', 'none', 'Marker', 'v', 'MarkerSize', 2^3)
@@ -84,7 +87,7 @@
 	  title(sprintf( ...
 	     '{\\it\\delta}[%d,%d,%d,%d] = %5.2f \\leq (%5s-%d %d:%d M-dev. {\\it\\delta}[{\\ity},{\\itm},{\\itd},{\\ith}]) \\leq {\\it\\delta}[%d,%d,%d,%d] = %5.2f', ...
 	     u{:}, sta(i).Md(1,l), sta(i).name, l, yr([1 end]), v{:}, sta(i).Md(2,l)))
-	  if i == lSta(end) & l == sta(i).nWin
+	  if i == lSta(end) && l == sta(i).nWin
 	     xlabel('months since January 1 00:00')
 	  end
        end
