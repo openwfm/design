@@ -179,7 +179,7 @@
     sta(i).u{kd} = sta(i).u{ks};	% change label units
  end,clear d2c i j kd kg kr ks kt
  %% 
- if ~any(strcmp(fieldnames(sta),'mom'))	% Moments not computed yet
+ if ~any(strcmp(fieldnames(sta), 'mom'))% Moments not computed yet
     %
     % Get indexes for data types:
     %
@@ -188,7 +188,7 @@
     ku = find(strcmp(datList(1 : nDat), 'UWND'     ));
     kv = find(strcmp(datList(1 : nDat), 'VWND'     ));
     ib = @(a,x) a(1) <= x & x <= a(2);	% in-between condition
-%     n = sum(cell2mat({sta.nWin})) + 1;
+    n = sum(cell2mat({sta.nWin})) + 1;
     for i = lSta			% station (with burn requirements) loop:
        for l = 1 : sta(i).nWin		% window loop at station i:
 	  %
@@ -238,9 +238,9 @@
 	  end
 	  g = logical(prod(f, 2));	% 'AND' through all requirements
 	  if sum(g) > 1			% at least 2 data pass requirements
-% 	     figure(n)
-% 	     set(gcf, 'Units', 'normalized', 'OuterPosition', [1/8 0 7/8 1], 'Units', 'pixels')
-% 	     clf
+	     figure(n)
+	     set(gcf, 'Units', 'normalized', 'OuterPosition', [1/8 0 7/8 1], 'Units', 'pixels')
+	     clf
 	     m = 0;			% initialize correlation index
 	     for k = 1 : nDat - 1	% correlation row k
 		for j = k + 1 : nDat	% correlation column j (upper diagonal)
@@ -250,28 +250,28 @@
 		   %
 		   a = corrcoef(sta(i).d(g,j), sta(i).d(g,k));
 		   sta(i).mom(l).r(m) = a(1,2);
-% 		   subplot(nDat - 1, nDat - 1, (nDat - 1)*(k - 1) + j - 1, 'align')
-% 		   plot(sta(i).d(~g,j), sta(i).d(~g,k), 'c.', ...
-% 		        sta(i).d( g,j), sta(i).d( g,k), 'ro', 'MarkerFaceColor', 'r')
-% 		   set(covEllip(sta(i).mom(l).s([j k]), sta(i).mom(l).r(m), sta(i).mom(l).m([j k])), ...
-% 		      'Color', 'b', 'LineWidth', 2)
-% 		   if j == k + 1
-% 		      if k == 1
-% 			 title(sprintf('Station %s window %d', sta(i).name, l))
-% 		      end
-% 		      xlabel(sprintf('%s (%s)', strrep(datList{j}, '_', '\_'), sta(i).u{j}))
-% 		      ylabel(sprintf('%s (%s)', strrep(datList{k}, '_', '\_'), sta(i).u{k}))
-% 		   else
-% 		      set(gca, 'XTickLabel', '', 'YTickLabel', '')
-% 		   end
-% 		   axis tight
+		   subplot(nDat - 1, nDat - 1, (nDat - 1)*(k - 1) + j - 1, 'align')
+		   plot(sta(i).d(~g,j), sta(i).d(~g,k), '.', 'Color', .8*[1 1 1], 'MarkerSize', 1)
+		   line(sta(i).d( g,j), sta(i).d( g,k), 'Color', .4*[1 1 1], 'LineStyle', 'none', 'Marker', '.', 'MarkerSize', 6)
+		   set(covEllip(sta(i).mom(l).s([j k]), sta(i).mom(l).r(m), sta(i).mom(l).m([j k])), ...
+		      'Color', 'k', 'LineWidth', 2)
+		   if j == k + 1
+		      if k == 1
+			 title(sprintf('Station %s window %d', sta(i).name, l))
+		      end
+		      xlabel(sprintf('%s (%s)', strrep(datList{j}, '_', '\_'), sta(i).u{j}))
+		      ylabel(sprintf('%s (%s)', strrep(datList{k}, '_', '\_'), sta(i).u{k}))
+		   else
+		      set(gca, 'XTickLabel', '', 'YTickLabel', '')
+		   end
+		   axis tight
 		end
 	     end
-% 	     drawnow
-% 	     orient tall
-% 	     orient landscape		% needs to follow 'tall'
-% 	     print(n, '-dpng', sprintf('figures/%s_w%d_scat', sta(i).name, l))
-% 	     n = n + 1;
+	     drawnow
+	     orient tall
+	     orient landscape		% needs to follow 'tall'
+	     print(n, '-dpng', sprintf('figures/%s_w%d_scat', sta(i).name, l))
+	     n = n + 1;
 	  else
 	     fprintf('\n%s-%d has no good data\n\n', sta(i).name, l)
 	  end
