@@ -17,7 +17,6 @@
  matF = fullfile('mat', 'analXls.mat');	% .mat file name
  wd = '~/research/UCD/FASMEE/fasmee/aimefournier/matlab/'
  cd(wd)			 		% directory of scripts
- %% 
  if ~exist(matF, 'file')		% spreadsheet processing not yet done
     datef = 'yyyy-mm-ddTHH:MM:SSZ';	% date format
     datList = {'air_temp' ...		% data types of interest
@@ -40,7 +39,7 @@
     l = ones(1, length(sta));		% allocate nu. time windows at stations
     for i = 2 : length(sta)		% seek multiple windows at each station
        j = find(strcmp(sta{i}, sta(1 : i - 1)));
-       if length(j)			% length(j) > 0 means duplicate names ...
+       if ~isempty(j)			% length(j) > 0 means duplicate names ...
 	  l([i j]) = length(j) + 1;	% assign equal counts to duplicates
        end
     end,clear i j
@@ -98,8 +97,8 @@
        for j = 1 : intmax		% loop over metadata rows (starting with '#'):
 	  T = fgetl(f);
 	  if strcmp(T(1), '#')
-	     g = max(find(T==':'));
-	     eval(['sta(i).' matlab.lang.makeValidName(regexprep(T(min(find(T==' ')) + 1 : g - 1),' ','_')) ...
+	     g = find(T == ':', 1, 'last' );
+	     eval(['sta(i).' matlab.lang.makeValidName(regexprep(T(find(T == ' ', 1 ) + 1 : g - 1),' ','_')) ...
 		'=''' T(g + 2 : end) ''';'])
 	  else
 	     break;			% now T is the main data header now
@@ -108,20 +107,32 @@
        sta(i).hdr = T;			% header row
        T = strsplit(strrep(T, ...	% truncate useless suffices and
 	  '_set_1', ''), ',');		% split strings delimited by ','
-       sta(i).datI = find(cellfun( ...	% data column indexes
+       datI = find(cellfun( ...		% data column indexes
 	  @(x) sum(ismember(datList, x)), T));
        T = strsplit(fgetl(f), ',');
-       sta(i).u = T(sta(i).datI - 1);	% units row
+       sta(i).u = T(datI - 1);		% units row
        T = textscan(f, ['%s%s' ...	% read 2 strings, then some floats, then skip to EOL:
-	  repmat('%f', 1, max(sta(i).datI) - 2) '%*[^\n]'], 'Delimiter', ',');
+	  repmat('%f', 1, max(datI) - 2) '%*[^\n]'], 'Delimiter', ',');
        fclose(f);
        sta(i).t = datenum(T{2}, datef);	% time (days) in column 2
        % sta(i).yr = unique(num2cell(datestr(sta(i).t, 'yyyy'), 2));
        sta(i).d = cell2mat( ...		% data in other columns
-	  T(:,sta(i).datI));
+	  T(:,datI));
+       k = find(strcmp(datList,'air_temp'));
+       T = find(sta(i).d(:,k) < -63 |  57 < sta(i).d(:,k));
+       sta(i).d(T,:) = [];		% eliminate extreme air_temp
+       sta(i).t(T  ) = [];
+       k = find(strcmp(datList,'relative_humidity'));
+       T = find(sta(i).d(:,k) <   0 | 100 < sta(i).d(:,k));
+       sta(i).d(T,:) = [];		% eliminate impossible relative_humidity
+       sta(i).t(T  ) = [];
+       [~, k] = intersect(datList, {'wind_speed', 'wind_gust'}, 'stable');
+       T = find(any(sta(i).d(:,k) <   0 | 103 < sta(i).d(:,k), 2));
+       sta(i).d(T,:) = [];		% eliminate extreme or impossible wind
+       sta(i).t(T  ) = [];
        sta(i).nt = length(sta(i).t);	% nu. times
        fprintf('%5.1fs\n',toc)
-    end, clear d f i j T
+    end, clear d datI f i j T
     save(matF)
  else
     tic
@@ -136,12 +147,8 @@
  %
  % Print the analXls_figs figures:
  %
- n = 1;
  for i = lSta
-    for l = 1 : sta(i).nWin
-       print(n, '-dpng', sprintf('figures/%s_w%d_data', sta(i).name, l))
-       n = n + 1;
-    end
+    print(i, '-dpng', sprintf('figures/%s_data', sta(i).name))
  end
 %% 
  fprintf('Transform (%s\b)\n', sprintf('%s ', datList{:}))
@@ -162,7 +169,7 @@
  fprintf('\tto (%s\b).\n', sprintf('%s ', datList{:}))
  for i = lSta				% station loop:
     sta(i).d(:,kr) = ...		% change RELH to dew-point temperature:
-       RELH2DWT(sta(i).d(:,kr), sta(i).d(:,kt));
+       RELH2DWT(sta(i).d(:,kr), sta(i).d(:,kt)); %#ok<*FNDSB>
 %      log10(sta(i).d(:,kr));		% _or_ just take its log10.
     sta(i).u{kr} = 'Celsius';		% update units
     sta(i).d(sta(i).d(:,ks) == 0,kd) ...% replace wind_direction NaNs when wind_direction not defined:
@@ -183,20 +190,12 @@
     ib = @(a,x) a(1) <= x & x <= a(2);	% in-between condition
 %     n = sum(cell2mat({sta.nWin})) + 1;
     for i = lSta			% station (with burn requirements) loop:
-       [~, d{1 : 3}] = datevec(sta(i).t);
        for l = 1 : sta(i).nWin		% window loop at station i:
 	  %
-	  % logical f tests the burn requirements, 1st for month, day, hour:
+	  % logical f tests the burn requirements, 1st, not too hot or cold:
 	  %
-          f = ib(sta(i).bmdh( :, 1,l), d{1}) & ...
-	      ib(sta(i).bmdh( :, 2,l), d{2}) & ...
-	      ib(sta(i).bmdh( :, 3,l), d{3});
-	  fprintf('%5s, %4dd in window %d: ', sta(i).name, sum(f), l)
-	  %
-	  % ... then not too hot or cold:
-	  %
-	  f = f & ib(sta(i).bReqs(:,kt,l), sta(i).d(:,kt));
-	  fprintf('%4d OK air_temp, ', sum(f))
+	  f = ib(sta(i).bReqs(:,kt,l), sta(i).d(:,kt));
+	  fprintf('%5s_%d has %4dd OK air_temp, ', sta(i).name, l, sum(f))
 	  %
 	  % ... then not too wet or dry:
 	  %
