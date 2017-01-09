@@ -43,8 +43,8 @@
 %  fprintf('%9.3g ',   x/(-s(2)) - 1)
 %  [~, x] = fminbnd(@(w)-f(2,w), -pi, pi);
 %  fprintf('%9.3g\n', -x/s(2)    - 1)
- u = (2*(0 : n)/n - 1)*pi;
- x = repmat(m(:), 1, n + 1) + v*diag(1./sqrt(diag(d)))*[cos(u)
-                                                        sin(u)];
+ u = (2*(0 : n - 1)/(n - 1) - 1)*pi;
+ x = repmat(m(:), 1, n) + v*diag(1./sqrt(diag(d)))*[cos(u)
+                                                    sin(u)];
 % line(u, x')
  h = line(x(1,:), x(2,:));
