@@ -36,7 +36,7 @@
 	     else
 		nt(k,l) = nt(k,l) + length(f);
 		h(l) = line( t(f), sta(i).d(g(f),k), 'Color', cm(l,:), 'DisplayName', sprintf('%d in window %d', nt(k,l), l), 'LineStyle', ...
-		            'none', 'Marker', '.', 'ZData', ones(size(f)));
+		            'none', 'Marker', '.', 'MarkerSize', 1, 'ZData', ones(size(f)));
 	     end
 	  end
 	  axis tight

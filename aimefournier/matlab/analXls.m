@@ -142,7 +142,7 @@
  end
 
  %% 
- analXls_figs
+ analXls_figs				% Don't run after transforming below!
  %% 
  %
  % Print the analXls_figs figures:
@@ -187,97 +187,114 @@
     kd = find(strcmp(datList(1 : nDat), 'DWP'      ));
     ku = find(strcmp(datList(1 : nDat), 'UWND'     ));
     kv = find(strcmp(datList(1 : nDat), 'VWND'     ));
+    cm = gray(max(arrayfun(@(x)x.nWin, sta)) + 2);
+    cm(end,:) = [];			% don't use white color
     ib = @(a,x) a(1) <= x & x <= a(2);	% in-between condition
-    n = sum(cell2mat({sta.nWin})) + 1;
     for i = lSta			% station (with burn requirements) loop:
-       for l = 1 : sta(i).nWin		% window loop at station i:
-	  %
-	  % logical f tests the burn requirements, 1st, not too hot or cold:
-	  %
-	  f = ib(sta(i).bReqs(:,kt,l), sta(i).d(:,kt));
-	  fprintf('%5s_%d has %4dd OK air_temp, ', sta(i).name, l, sum(f))
-	  %
-	  % ... then not too wet or dry:
-	  %
-	  f = f & ib(sta(i).bReqs(:,kd,l), RELH2DWT(sta(i).d(:,kd), sta(i).d(:,kt), -1));
-	  fprintf('%4d OK relative_humidity, ', sum(f))
-	  %
-	  % ... then not too fast or slow:
-	  %
-	  f = f & ib(sta(i).bReqs(:,ku,l), sqrt(sum(sta(i).d(:,[ku kv]).^2, 2)));
-          fprintf('%4d OK wind_speed, ', sum(f))
-	  f = bsxfun(@and, f, isfinite(sta(i).d));
-	  %
-	  % sample size n:
-	  %
-	  sta(i).mom(l).n = sum(f);
-	  %
-	  % Allocate sample mean m, std dev s, upper-diagonal correlation r:
-	  %
-	  sta(i).mom(l).m = NaN(  1, nDat             );
-	  sta(i).mom(l).s = NaN(  1, nDat             );
-	  sta(i).mom(l).r = NaN(  1, nDat*(nDat - 1)/2);
-          fprintf('[%s\b] finite values\n', sprintf('%3d ', sta(i).mom(l).n))
-	  for k = 1 : nDat
-	     if sta(i).mom(l).n(k) > 0
-		%
-		% Compute the sample mean:
-		%
-		sta(i).mom(l).m(k) = mean(sta(i).d(f(:,k),k));
-	     else
-		fprintf('%s-%d %s has no data\n', sta(i).name, l, datList{k})
-	     end
-	     if sta(i).mom(l).n(k) > 1
-		%
-		% Compute the std dev:
-		%
-		sta(i).mom(l).s(k) = std(sta(i).d(f(:,k),k));
-	     else
-		fprintf('%s-%d %s has one datum\n', sta(i).name, l, datList{k})
-	     end
-	  end
-	  g = logical(prod(f, 2));	% 'AND' through all requirements
-	  if sum(g) > 1			% at least 2 data pass requirements
-	     figure(n)
-	     set(gcf, 'Units', 'normalized', 'OuterPosition', [1/8 0 7/8 1], 'Units', 'pixels')
-	     clf
-	     m = 0;			% initialize correlation index
-	     for k = 1 : nDat - 1	% correlation row k
-		for j = k + 1 : nDat	% correlation column j (upper diagonal)
-		   m = m + 1;		% update correlation index
-		   %
-		   % Compute the j,k--correlation:
-		   %
-		   a = corrcoef(sta(i).d(g,j), sta(i).d(g,k));
-		   sta(i).mom(l).r(m) = a(1,2);
-		   subplot(nDat - 1, nDat - 1, (nDat - 1)*(k - 1) + j - 1, 'align')
-		   plot(sta(i).d(~g,j), sta(i).d(~g,k), '.', 'Color', .8*[1 1 1], 'MarkerSize', 1)
-		   line(sta(i).d( g,j), sta(i).d( g,k), 'Color', .4*[1 1 1], 'LineStyle', 'none', 'Marker', '.', 'MarkerSize', 6)
-		   set(covEllip(sta(i).mom(l).s([j k]), sta(i).mom(l).r(m), sta(i).mom(l).m([j k])), ...
-		      'Color', 'k', 'LineWidth', 2)
-		   if j == k + 1
-		      if k == 1
-			 title(sprintf('Station %s window %d', sta(i).name, l))
-		      end
-		      xlabel(sprintf('%s (%s)', strrep(datList{j}, '_', '\_'), sta(i).u{j}))
-		      ylabel(sprintf('%s (%s)', strrep(datList{k}, '_', '\_'), sta(i).u{k}))
-		   else
-		      set(gca, 'XTickLabel', '', 'YTickLabel', '')
-		   end
-		   axis tight
-		end
-	     end
-	     drawnow
-	     orient tall
-	     orient landscape		% needs to follow 'tall'
-	     print(n, '-dpng', sprintf('figures/%s_w%d_scat', sta(i).name, l))
-	     n = n + 1;
+       %
+       % logical f tests the burn requirements, 1st, not too hot or cold:
+       %
+       f = ib(sta(i).bReqs(:,kt,1), sta(i).d(:,kt));
+       fprintf('%5s has %4dd OK air_temp, ', sta(i).name, sum(f))
+       %
+       % ... then not too wet or dry:
+       %
+       f = f & ib(sta(i).bReqs(:,kd,1), RELH2DWT(sta(i).d(:,kd), sta(i).d(:,kt), -1));
+       fprintf('%4d OK relative_humidity, ', sum(f))
+       %
+       % ... then not too fast or slow:
+       %
+       f = f & ib(sta(i).bReqs(:,ku,1), sqrt(sum(sta(i).d(:,[ku kv]).^2, 2)));
+       fprintf('%4d OK wind_speed, ', sum(f))
+       f = bsxfun(@and, f, isfinite(sta(i).d));
+       %
+       % sample size n:
+       %
+       sta(i).mom.n = sum(f);
+       %
+       % Allocate sample mean m, std dev s, upper-diagonal correlation r:
+       %
+       sta(i).mom.m = NaN(  1, nDat             );
+       sta(i).mom.s = NaN(  1, nDat             );
+       sta(i).mom.r = NaN(  1, nDat*(nDat - 1)/2);
+       fprintf('[%s\b] finite values\n', sprintf('%3d ', sta(i).mom.n))
+       for k = 1 : nDat
+	  if sta(i).mom.n(k) > 0
+	     %
+	     % Compute the sample mean:
+	     %
+	     sta(i).mom.m(k) = mean(sta(i).d(f(:,k),k));
 	  else
-	     fprintf('\n%s-%d has no good data\n\n', sta(i).name, l)
+	     fprintf('%s %s has no data\n', sta(i).name, datList{k})
 	  end
+	  if sta(i).mom.n(k) > 1
+	     %
+	     % Compute the std dev:
+	     %
+	     sta(i).mom.s(k) = std(sta(i).d(f(:,k),k));
+	  else
+	     fprintf('%s %s has one datum\n', sta(i).name, datList{k})
+	  end
+       end
+       figure(lSta(end) + i)
+       set(gcf, 'Units', 'normalized', 'OuterPosition', [1/8 0 7/8 1], 'Units', 'pixels')
+       clf
+       f = logical(prod(f, 2));		% 'AND' through all requirements
+       [~,~,~,h] = datevec(sta(i).t);	% hour-of-day for each time
+       if sum(f) > 1			% at least 2 data pass requirements
+	  m = 0;			% initialize correlation index
+	  for k = 1 : nDat - 1		% correlation row k
+	     for j = k + 1 : nDat	% correlation column j (upper diagonal)
+		m = m + 1;		% update correlation index
+		%
+		% Compute the j,k--correlation:
+		%
+		a = corrcoef(sta(i).d(f,j), sta(i).d(f,k));
+		sta(i).mom.r(m) = a(1,2);
+		subplot(nDat - 1, nDat - 1, (nDat - 1)*(k - 1) + j - 1, 'align')
+		plot(sta(i).d(~f,j), sta(i).d(~f,k), '.', 'Color', cm(end,:), 'MarkerSize', 1, 'ZData', -ones(sum(~f), 1))
+		l = 1;			% same color for all windows
+% 		for l = 1 : sta(i).nWin
+% 		   b = datevec(sta(i).t);
+% 		   b = datenum(repmat(b(:,1), 1, 2), repmat(sta(i).bmdh(:,1,l)', sta(i).nt, 1) ...
+% 		                                   , repmat(sta(i).bmdh(:,2,l)', sta(i).nt, 1));
+		   %
+		   % Enforce month-day-hour and data-value conditions:
+		   %
+		   g = f;% &   b(:,1) <= sta(i).t & sta(i).t <= b(:,2) & ib(sta(i).bmdh(:,3,l), h) ;
+		   line(sta(i).d(g,j), sta(i).d(g,k), 'Color', cm(  l,:), 'LineStyle', 'none', 'Marker', '.', 'MarkerSize', 6, 'ZData', ones(sum(g), 1))
+% 		   g = f & ~(b(:,1) <= sta(i).t & sta(i).t <= b(:,2) & ib(sta(i).bmdh(:,3,l), h));
+% 		   line(sta(i).d(g,j), sta(i).d(g,k), 'Color', cm(end,:), 'LineStyle', 'none', 'Marker', '.', 'MarkerSize', 1)
+% 		end
+		set(covEllip(sta(i).mom.s([j k]), sta(i).mom.r(m), sta(i).mom.m([j k]), 32), ...
+		   'Color', 'g', 'LineWidth', 3, 'ZData', 2*ones(32, 1))
+		if j == k + 1
+		   if k == 1
+		      title(sprintf('Station %s', sta(i).name))
+		   end
+		   xlabel(sprintf('%s (%s)', strrep(datList{j}, '_', '\_'), sta(i).u{j}))
+		   ylabel(sprintf('%s (%s)', strrep(datList{k}, '_', '\_'), sta(i).u{k}))
+		else
+		   set(gca, 'XTickLabel', '', 'YTickLabel', '')
+		end
+		axis([sta(i).mom.m(j)+[-1 1]*3*sta(i).mom.s(j) ...
+		      sta(i).mom.m(k)+[-1 1]*3*sta(i).mom.s(k)])
+	     end
+	  end
+	  drawnow
+	  orient tall
+	  orient landscape		% needs to follow 'tall'
+       else
+	  fprintf('\n%s has no good data\n\n', sta(i).name)
        end
     end, clear a f g i ib j k kd kt ku kv l m n
  end
+ %% 
+ for i = lSta			% station (with burn requirements) loop:
+    figure(lSta(end) + i)
+    print('-dpng', sprintf('figures/%s_scat', sta(i).name))
+ end
+ 
  %% 
 %  analXls_stats
  %% 
