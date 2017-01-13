@@ -1,3 +1,6 @@
+function plot_tign_in(tign_in,ign,dom)
+% plot_tign_in(tign_in,tig,dom)
+
 m=max(tign_in(tign_in(:)<max(tign_in(:))));
 [ii,jj,vv]=find(tign_in<m+100);
 si=min(ii):max(ii);sj=min(jj):max(jj);
