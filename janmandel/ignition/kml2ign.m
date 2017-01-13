@@ -23,7 +23,7 @@ function ign=kml2ign(k,dom)
 % usage:
 %
 % k=kml2struct(kml);
-% dom=load_dom(wrfout);
+% dom=load_domain(wrfout);
 % ign = kml2ign(k,dom);
 % tign=make_tign(ign,dom);
 % ncreplace(wrfinput,tign);
