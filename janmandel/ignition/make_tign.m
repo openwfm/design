@@ -20,8 +20,11 @@ function tign=make_tign(ign,dom,tign_max)
 % or
 %   ign = xls2ign(xls)
 % tign=make_tign(ign,dom);
-% ncreplace(wrfinput,tign);
+% ncreplace(wrfinput,'TIGN_G',tign);
+% when running WRF-SFIRE set number of ignitions to zero and 
+% fire_tign_in_time = number in seconds between max ignition time and max ignition time+duration 
 
+duration = 1000;
 
 for k=1:length(ign)
     lon(k)=ign(k).Lon;
@@ -51,7 +54,7 @@ for k=1:length(ign)
     % fire arrival time from ignition assuming given ros 
     tign(s)=min(tign(s),ign(k).t+d(s)/ign(k).ros);
 end 
-b=1000+max(t);
+b=duration+max(t);
 [i,j,v]=find(tign<b);
 mesh(min(b,tign(min(i):max(i),min(j):max(j))))
 end
