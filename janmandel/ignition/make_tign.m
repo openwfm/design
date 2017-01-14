@@ -14,6 +14,9 @@ function tign=make_tign(ign,dom,tign_max)
 %       r      radius where ignition will be enforced
 %
 % usage:
+% navigate in matlab to fasmee/janmandel and
+% startup
+% to set up the path. Then
 % dom=load_domain(wrfout);
 % then
 %   % k=kml2struct(kml);ign = kml2ign(k,dom);
