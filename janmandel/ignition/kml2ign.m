@@ -36,6 +36,7 @@ for i=1:length(k),
     end
 end
 % sort by Name
+n=[];
 for i=1:length(ign)
     n(i)=str2num(ign(i).Name);
 end
