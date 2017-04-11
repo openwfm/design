@@ -7,6 +7,9 @@ function V=effect(P,Y)
 %   Y   matrix size (#sampling points, #repetitions) of output values
 %       Y(j,k) is the output generated from parameter vector P(:,j,k)
 %
+% Output
+%   V   V(i) is the variance in Y due to parameter i 
+%
 % Reference: Andrea Saltelli, Stefano Tarantola, Francesca Campolongo
 % and Marco Ratto, Sensitivity Analysis in Practice, John Wiley 2004
 % p.134
