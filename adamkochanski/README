@@ -1,0 +1,13 @@
+The script process_RxCADRE_ignitions.m utilizes Jan's tools for processsing ignition data in order to generate ignition matrix for the RxCADRE burn L2F. 
+There were 3 ATV ignition lines, but only 2 of them were GPS-ed and timed (ATV1 and ATV2). The third (most southern) ignition line is missing in 
+RxCADRE dataset. The location and time of the 3rd ignition line was approximated based on the WASP IR fire observations, and the location of the
+outhern burb plot boundary. The source kml data for the first two ignition lines, and the xls file with approximated locations and times of the
+third (missing) ignition line are in fasmee/KML as L2F_Fire1.kml and L2F_Fire2.kml.
+The script shoudl be executed from ./fasmee/janmandel directory so all the paths are set correctly. Otherwise go to fasmee/janmandel, execute
+startup.m and then run the process_RxCADRE_ignitions.m.
+In the current form the script processes ignition timing for a simulation starting at 15:00 UTC, so all tign matrices are in seconds from 15:00UTC.
+If the simulation start time changes change:
+	sim_start_h=15;
+	sim_start_m=0; 
+	sim_start_s=0;
+ 
