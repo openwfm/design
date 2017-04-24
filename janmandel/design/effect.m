@@ -1,46 +1,56 @@
-function V=effect(P,Y)
-%    effect(P,Y) 
-% Evaluating effect of factors
+function V=effect(X,Y)
+% V = effect(X,Y) 
+% Evaluating effect of parameters
 % Input
-%   P   matrix size (#parametrs, #sampling points, #repetitions) from rLHS
-%       P(i,:,r) are random permutations of the same sample points
+%   X   matrix of input values (#parameters, #sampling points, #repetitions) from rLHS
+%       X(i,:,r) are random permutations of the same sample points
 %   Y   matrix size (#sampling points, #repetitions) of output values
-%       Y(j,k) is the output generated from parameter vector P(:,j,k)
+%       Y(j,l) is the output generated from parameter vector X(:,j,l)
 %
 % Output
 %   V   V(i) is the variance in Y due to parameter i 
 %
 % Reference: Andrea Saltelli, Stefano Tarantola, Francesca Campolongo
 % and Marco Ratto, Sensitivity Analysis in Practice, John Wiley 2004
-% p.134
+% p. 134
+% McKay, p. 24
 
-[L,N,r]=size(P); 
-
-% retrieve the sampling points and check for Latin Hypercube
-for l=1:r
-    D=sort(P(:,:,l),2);
-    if l==1,
-        D0=D;
-    elseif any(D(:) ~= D0(:)),
-        error('P(i,:,r) must be random permutations of the same sample points')
-    end
+[L,N,r]=size(X); 
+[NN,rr]=size(Y);
+if NN~=N | rr~=r,
+    error('incompatible dimension')
 end
 
-% yy(j,i,l) = y(ix,l) such that X(j) is in i-th bin in run ix repetition l
-y=zeros(L,N,r);
-for l=1:r
-    for i=1:N
-        for j=1:L
-            ix=find(P(j,:,l) == D(j,i));
-            y(j,i,l)=Y(ix,l);
+% retrieve the sampling points and check for Latin Hypercube
+D0 = sort(X(:,:,1),2);        % sorted lists of sample points
+for i=1:L
+    for l=1:r, 
+        D=sort(X(i,:,l));
+        if any(D ~= D0(i,:)),
+            error(sprintf('X(%i,:,l) must be permutations of the same sample points',i))
         end
     end
 end
 
-% cmean(j,i) = mean of y conditional on X(j) in i-th bin
+% y(i,j,l) = Y(ix,l) such that X(i) is in j-th bin in repetition l
+y=zeros(L,N,r);
+for i=1:L                   % variable
+    for j=1:N               % sample point
+        for l=1:r           % repetition
+            ix=find(X(i,:,l) == D0(i,j));
+            if length(ix) ~= 1,
+                error('exactly one point should match')
+            end
+            y(i,j,l)=Y(ix,l);
+        end
+    end
+end
+
+% cmean(i,j) = mean of y conditional on X(i) in j-th bin
 cmean = mean(y,3);
-% mean of over i, does not depend on j
-yy = mean(cmean,2);
-ymean=yy(1);
+% ymean(i) = mean of X(i)
+ymean = mean(cmean,2);
 % variability due to input j
-V = mean((cmean-ymean).^2,2);
+V = mean((cmean-ymean*ones(1,N)).^2,2);
+V
+end

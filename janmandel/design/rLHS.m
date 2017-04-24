@@ -3,10 +3,11 @@ function P=rLHS(D,r)
 % Repeated Latin Hypercube Sampling
 % input:
 %       D matrix size (L,N)
-%         the range of values of input I=1:L is decomposed 
+%         D(i,j) is a sampling point for input i from interval j 
+%         the range of values of input i=1:L is decomposed 
 %         in N disjoint intervals such that
-%         Pr( input I in interval J for input I  ) = 1/N
-%         D(I,J) is a sampling point for input I from interval J 
+%         Pr( input i in interval j) = 1/N
+%
 %       r the number of repetitions
 %
 %  returns:
