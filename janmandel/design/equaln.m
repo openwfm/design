@@ -13,7 +13,7 @@ end
 L=length(m);
 D = zeros(L,N);
 v = (-(N-1):2:N-1)/N; % v(i) represents interval [v(i)-N/2,v(i)+N/2]
-p = erfinv(v);
+p = erfinv(v)*sqrt(2);
 for i=1:L,
     D(i,:)=m(i)+s(i)*p;
 end
