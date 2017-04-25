@@ -50,7 +50,6 @@ end
 cmean = mean(y,3);
 % ymean(i) = mean of X(i)
 ymean = mean(cmean,2);
-% variability due to input j
+% variance due to input j
 V = mean((cmean-ymean*ones(1,N)).^2,2);
-V
 end

@@ -18,5 +18,6 @@ for j=1:N
     end
 end
 V = effect(X,Y)
+% X,Y,V
 V_exact = (a.*std_vec).^2
 err = V./V_exact(:)
