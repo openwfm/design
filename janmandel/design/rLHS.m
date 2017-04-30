@@ -1,5 +1,5 @@
 function P=rLHS(D,r)
-% rD=rLHS(D)
+% rD=rLHS(D,r)
 % Repeated Latin Hypercube Sampling
 % input:
 %       D matrix size (L,N)
