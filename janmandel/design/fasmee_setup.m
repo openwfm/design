@@ -1,8 +1,10 @@
 root_dir='/glade/u/home/jmandel/scratch/WRF341F_jm2_devel/wrffire/wrfv2_fire/test'
-template_dir=[root,'/Fishlake_template']
+template_dir=[root_dir,'/Fishlake_template']
 wksp_dir = '/glade/u/home/jmandel/Projects/wrfxpy/wksp'
 
 generate=0
+clone=1
+
 if generate 
     N = 5;
     [D,logm,logs]=equal_logn(...
@@ -13,23 +15,24 @@ if generate
                N)                % sample points
     [X,P]=rLHS(D,1)
 
-save rep P X D N
+save rep1 P X D N
     
 end
 
 
-load rep
+if clone
+load rep1
 for i = 1:N,
 
     case_id=num2str(P(:,i))';
-    job_id = ['Fishlake_',case_id]
+    job_id = ['LHS_Fishlake_',case_id]
     
     job_dir = [wksp_dir,'/',job_id]
     wrf_dir = [root_dir,'/',job_id]  % where wrf will run
 
     shell(['mkdir ',job_dir])
     shell(['cp -a ',template_dir,' ',wrf_dir])
-    shell(['ln -s ',job_dir,'/wrf ',wrf_dir])
+    shell(['ln -s ',wrf_dir,' ',job_dir,'/wrf '])
 
     nml = fileread([wrf_dir,'/namelist.input.template']);
     nml = strrep(nml,'_fire_ext_grnd_',num2str(D(2,i)));
@@ -54,4 +57,5 @@ for i = 1:N,
     fmc_gc(:,:,5)=0.78;
     ncreplace(wrf_f,'FMC_GC',fmc_gc);
     
+end
 end
