@@ -10,7 +10,7 @@
 % however, it may work simply from the Matlab command window too.
 % It will display what it is doing.
 %
-% A few lines may need to be edited for customized use:
+% The following few lines may need to be edited for customized use:
 %
  ext = 'csv';				% spreadsheet file extension
  bReqF = fullfile(ext, ['bReqs.' ext]); % burn requirements file
@@ -71,7 +71,7 @@
 		   case 'wind_speed'	% convert mi/h to m/s:
 		      sta(i).bReqs(:,l,j) = ...
 			 sta(i).bReqs(:,l,j)*1609.344/60^2;
-		   case 'air_temp'		% convert deg F to deg C:
+		   case 'air_temp'	% convert deg F to deg C:
 		      sta(i).bReqs(:,l,j) = ...
 			 (sta(i).bReqs(:,l,j) - 32)*5/9;
 		end
