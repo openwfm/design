@@ -8,7 +8,9 @@
 % See https://en.wikipedia.org/wiki/Dew_point.
 %
 
-% Author: Aime' Fournier
+% Author:               Aime' Fournier
+% Project Title:        Modeling support for FASMEE experimental design using WRF-SFIRE-CHEM
+% JFSP project number:  16-4-05-3
 
  if nargin < 3
     f = 1;

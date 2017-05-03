@@ -1,6 +1,8 @@
-% Author:	Aimé Fournier
-% File:		analXls.m
-% Purpose:	Analyze .xlsx spreadsheets as described below.
+% Author:               Aime' Fournier
+% Project Title:        Modeling support for FASMEE experimental design using WRF-SFIRE-CHEM
+% JFSP project number:  16-4-05-3
+% File:		        analXls.m
+% Purpose:	        Analyze .xlsx spreadsheets as described below.
 
  clear
 
