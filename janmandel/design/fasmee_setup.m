@@ -30,13 +30,17 @@ for i = 1:N,
     job_dir = [wksp_dir,'/',job_id]
     wrf_dir = [root_dir,'/',job_id]  % where wrf will run
 
+    shell(['/bin/rm -rf ',job_dir])
     shell(['mkdir ',job_dir])
+    shell(['/bin/rm -rf ',wrf_dir])
     shell(['cp -a ',template_dir,' ',wrf_dir])
     shell(['ln -s ',wrf_dir,' ',job_dir,'/wrf '])
 
     nml = fileread([wrf_dir,'/namelist.input.template']);
-    nml = strrep(nml,'_fire_ext_grnd_',num2str(D(2,i)));
-    nml = strrep(nml,'_fire_atm_feedback_',num2str(D(3,i)));
+    fire_ext_grnd = X(2,i)
+    nml = strrep(nml,'_fire_ext_grnd_',num2str(fire_ext_grnd));
+    fire_atm_feedback=X(3,i)
+    nml = strrep(nml,'_fire_atm_feedback_',num2str(fire_atm_feedback));
     filewrite([wrf_dir,'/namelist.input'],nml)
     
     lsf = fileread([wrf_dir,'/runwrf1.lsf.template']);
@@ -49,10 +53,11 @@ for i = 1:N,
     
     
     wrf_f = [wrf_dir,'/wrfinput_d05'];
+    fmc10h = X(1,i)
     fmc_gc=ncread(wrf_f,'FMC_GC');
-    fmc_gc(:,:,1)=D(1,i)-0.01;
-    fmc_gc(:,:,2)=D(1,i);
-    fmc_gc(:,:,3)=D(1,i)+0.01;
+    fmc_gc(:,:,1)=fmc10h-0.01;
+    fmc_gc(:,:,2)=fmc10h;
+    fmc_gc(:,:,3)=fmc10h+0.01;
     fmc_gc(:,:,4)=0.05;
     fmc_gc(:,:,5)=0.78;
     ncreplace(wrf_f,'FMC_GC',fmc_gc);
