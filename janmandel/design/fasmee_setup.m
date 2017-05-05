@@ -24,7 +24,7 @@ load rep1
                0.1,...           % probability value outside given interval
                N)                % sample points
 
-%P =[1;1;5]
+P =[1;1;5]
 
 [L,N,r]=size(P);
 
@@ -38,7 +38,7 @@ end
 for i = 1:N,
 
     case_id=num2str(P(:,i))';
-    job_id = ['LSH3_Fishlake_',case_id];
+    job_id = ['MAX3_Fishlake_',case_id];
     fmc_gc_10h = X(1,i);
     fire_ext_grnd = X(2,i);
     fire_atm_feedback=X(3,i);
