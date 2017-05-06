@@ -2,20 +2,31 @@ root_dir='/glade/u/home/jmandel/scratch/WRF341F_jm2_devel/wrffire/wrfv2_fire/tes
 template_dir=[root_dir,'/Fishlake_template']
 wksp_dir = '/glade/u/home/jmandel/Projects/wrfxpy/wksp'
 
-generate=0
+r=10
+generate=2
 clone=1
 
-if generate 
+if generate == 1
     N = 5;
-    [X,P]=rLHS(D,1)
+    P=rLHS(D,1)
 
-save rep1 P X D N
+save rep1 P D N
+
+else
+
+load rep1
     
+end
+
+if generate==2,
+for k=2:r
+    P(:,:,k)=rLHS(D,1);
+end
+save rep2 P D N
 end
 
 
 if clone
-load rep1
 
 [D,logm,logs]=equal_logn(...
               [0.05 0.14         % 10 h moisture
@@ -24,21 +35,20 @@ load rep1
                0.1,...           % probability value outside given interval
                N)                % sample points
 
-P =[1;1;5]
+%P =[1;1;5]
 
 [L,N,r]=size(P);
 
-for k=1:r
+
+for k=2:r
     for j=1:L
         pp=P(j,:,k);
-        X(j,:,k)=D(j,pp);
+        X(j,:)=D(j,pp);
     end
-end
+    for i = 1:N,
 
-for i = 1:N,
-
-    case_id=num2str(P(:,i))';
-    job_id = ['MAX3_Fishlake_',case_id];
+    case_id=sprintf('%03i_%s',k,num2str(P(:,i,k))');
+    job_id = ['LHS3_Fishlake_',case_id];
     fmc_gc_10h = X(1,i);
     fire_ext_grnd = X(2,i);
     fire_atm_feedback=X(3,i);
@@ -78,5 +88,6 @@ for i = 1:N,
     fmc_gc(:,:,5)=0.78;
     ncreplace(wrf_f,'FMC_GC',fmc_gc);
     
+end
 end
 end

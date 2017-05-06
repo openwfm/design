@@ -1,4 +1,4 @@
-function [X,P]=rLHS(D,r)
+function P=rLHS(D,r)
 % rD=rLHS(D,r)
 % Repeated Latin Hypercube Sampling
 % input:
@@ -11,9 +11,6 @@ function [X,P]=rLHS(D,r)
 %       r the number of repetitions
 %
 %  returns:
-%       X matrix size (L,N,r)
-%          each X(:,j,k) is one vector of input parameters to run
-%          delivering Y(j,k) which can be analyzed by effect
 %       P matrix size (L,N,r)
 %          each P(:,j,k) is one vector of corresponding parameter 
 %          indices between 1 and N. Can be used to form file names etc.
@@ -44,7 +41,6 @@ for k=1:r
     for j=1:L
         pp=randperm(N);
         P(j,:,k)=pp;
-        X(j,:,k)=D(j,pp);
     end
 end
 end
