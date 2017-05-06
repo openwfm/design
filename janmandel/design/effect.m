@@ -4,11 +4,11 @@ function V=effect(X,Y)
 % Input
 %   X   matrix of input values (#parameters, #sampling points, #repetitions) from rLHS
 %       X(i,:,r) are random permutations of the same sample points
-%   Y   matrix size (#sampling points, #repetitions) of output values
-%       Y(j,l) is the output generated from parameter vector X(:,j,l)
+%   Y   matrix size (#instances,#sampling points, #repetitions) of output values
+%       Y(:,j,l) is the output generated from parameter vector X(:,j,l)
 %
 % Output
-%   V   V(i) is the variance in Y due to parameter i 
+%   V   V(:,i) is the variance in Y due to parameter i 
 %
 % Reference: Andrea Saltelli, Stefano Tarantola, Francesca Campolongo
 % and Marco Ratto, Sensitivity Analysis in Practice, John Wiley 2004
@@ -16,7 +16,7 @@ function V=effect(X,Y)
 % McKay, p. 24
 
 [L,N,r]=size(X); 
-[NN,rr]=size(Y);
+[dim,NN,rr]=size(Y);
 if NN~=N | rr~=r,
     error('incompatible dimension')
 end
@@ -32,8 +32,8 @@ for i=1:L
     end
 end
 
-% y(i,j,l) = Y(ix,l) such that X(i) is in j-th bin in repetition l
-y=zeros(L,N,r);
+% y(:,i,j,l) = Y(:,ix,l) such that X(i) is in j-th bin in repetition l
+y=zeros(dim,L,N,r);
 for i=1:L                   % variable
     for j=1:N               % sample point
         for l=1:r           % repetition
@@ -41,15 +41,18 @@ for i=1:L                   % variable
             if length(ix) ~= 1,
                 error('exactly one point should match')
             end
-            y(i,j,l)=Y(ix,l);
+            y(:,i,j,l)=Y(:,ix,l);
         end
     end
 end
 
-% cmean(i,j) = mean of y conditional on X(i) in j-th bin
-cmean = mean(y,3);
-% ymean(i) = mean of X(i)
-ymean = mean(cmean,2);
+% cmean(:,i,j) = mean of y over repetitions conditional on X(i) in j-th bin
+% mean over repetitions
+cmean = mean(y,4);
+% mean of its variance
+V = mean(var(cmean,1,3),3);
+% ymean(i) = mean of Y(i)
+% ymean = mean(cmean,3);
 % variance due to input j
-V = mean((cmean-ymean*ones(1,N)).^2,2);
+% V = mean((cmean-ymean*ones(1,N)).^2,2);
 end

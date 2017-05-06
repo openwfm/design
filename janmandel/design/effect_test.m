@@ -14,7 +14,7 @@ std_vec =1:L;
 X = rLHS(equaln(mean_vec,std_vec,N),r);
 for j=1:N
     for l=1:r
-        Y(j,l) = model(X(:,j,l));
+        Y(1,j,l) = model(X(:,j,l));
     end
 end
 V = effect(X,Y)
