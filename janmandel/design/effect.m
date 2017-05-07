@@ -47,8 +47,15 @@ for i=1:L                   % variable
 end
 
 % cmean(:,i,j) = mean of y over repetitions conditional on X(i) in j-th bin
-% mean over repetitions
+
 cmean = mean(y,4);
+for i=1:L
+    for ix=1:dim,
+        err(ix,i) = mean(cmean(ix,i,:))-mean(mean((Y(ix,:,:))));
+    end
+end
+err
+
 % mean of its variance
 V = mean(var(cmean,1,3),3);
 % ymean(i) = mean of Y(i)
