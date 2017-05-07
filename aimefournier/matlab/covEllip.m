@@ -8,9 +8,10 @@
 % matrix with correlation r (default 0), 2 real orthogonal eigenvectors
 % v(:,1:2) and 2 positive eigenvalues d(1,1), d(2,2). Use 1 < n (default
 % 32) points for the line.
-%
-% Author: Aime' Fournier
-%
+
+% Author:               Aime' Fournier
+% Project Title:        Modeling support for FASMEE experimental design using WRF-SFIRE-CHEM
+% JFSP project number:  16-4-05-3
  if nargin < 4
     n = 32;
  end

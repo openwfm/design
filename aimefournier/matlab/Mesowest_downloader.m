@@ -1,4 +1,7 @@
-% Adam Kochanski 09142016
+% Author:               Adam Kochanski
+% Project Title:        Modeling support for FASMEE experimental design using WRF-SFIRE-CHEM
+% JFSP project number:  16-4-05-3
+% 09142016
 % this is a silly script that downloads meteorolgical data from Mesowest using mosewest API
 
 % we will construct a url in the following form:
