@@ -1,10 +1,13 @@
+function fasmee_setup
 root_dir='/glade/u/home/jmandel/scratch/WRF341F_jm2_devel/wrffire/wrfv2_fire/test'
 template_dir=[root_dir,'/Fishlake_template']
 wksp_dir = '/glade/u/home/jmandel/Projects/wrfxpy/wksp'
 
 r=10
 generate=2
-clone=1
+clone=0
+analysis=1
+
 
 if generate == 1
     N = 5;
@@ -19,10 +22,12 @@ load rep1
 end
 
 if generate==2,
-for k=2:r
-    P(:,:,k)=rLHS(D,1);
-end
-save rep2 P D N
+    for k=2:r
+        P(:,:,k)=rLHS(D,1);
+    end
+    save rep2 P D N
+else
+    load rep2
 end
 
 
@@ -47,8 +52,8 @@ for k=2:r
     end
     for i = 1:N,
 
-    case_id=sprintf('%03i_%s',k,num2str(P(:,i,k))');
-    job_id = ['LHS3_Fishlake_',case_id];
+    job_id = get_job_id(P,i,k)
+    
     fmc_gc_10h = X(1,i);
     fire_ext_grnd = X(2,i);
     fire_atm_feedback=X(3,i);
@@ -88,6 +93,23 @@ for k=2:r
     fmc_gc(:,:,5)=0.78;
     ncreplace(wrf_f,'FMC_GC',fmc_gc);
     
-end
-end
+end  % for i
+end  % for k
+end  % clone
+
+if analysis == 1,
+    for k=1:r
+        for i=1:N
+            job_id = get_job_id(P,i,k);
+            fprintf('replicant %03i vector %i job_id %s\n',k,i,job_id)
+        end
+    end
+    
+end % effect
+
+end  % function fasmee_setup
+
+function job_id = get_job_id(P,i,k)
+    case_id=sprintf('%03i_%s',k,num2str(P(:,i,k))');
+    job_id = ['LHS3_Fishlake_',case_id];
 end
