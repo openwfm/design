@@ -102,21 +102,21 @@ r=3
 if analysis == 1
     wrfout = 'wrfout_d05_2014-09-03_16:30:01'
     X=get_params_vec(P,D);
-    for ts=1
+    % for ts=1
         for k=1:r
             for i=1:N
                 job_id = get_job_id(P,i,k);
                 fprintf('replicant %03i vector %i job_id %s\n',k,i,job_id)
                 job_id = get_job_id(P,i,k)
                 f = [wksp_dir,'/',job_id,'/wrf/',wrfout];  % where wrf will run
-                p=nc2struct(f,{'FGRNHFX'},{},ts)
+                p=nc2struct(f,{'FGRNHFX'},{})
                 s=size(p.fgrnhfx);
                 Y(:,i,k)=p.fgrnhfx(:);
             end
         end
         V=effect(X,Y);
-        
-    end
+        V=reshape(V,[s,L]);     
+    % end
     
 end % analysis
 
