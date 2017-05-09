@@ -32,7 +32,7 @@ for i=1:L
     end
 end
 
-disp('matching')
+% disp('matching')
 % y(:,i,j,l) = Y(:,ix,l) such that X(i) is in j                                                                                                                                    -th bin in repetition l
 y=zeros(dim,L,N,r);
 for i=1:L                   % variable
@@ -49,20 +49,26 @@ end
 
 % cmean(:,i,j) = mean of y over repetitions conditional on X(i) in j-th bin
 
-disp('conditional mean')
-cmean = mean(y,4);
-% disp('checking')
-%for i=1:L
-%    for ix=1:dim,
-%        err(ix,i) = mean(cmean(ix,i,:))-mean(mean((Y(ix,:,:))));
-%    end
-%end
-%err_mean=norm(err(:))
+% disp('conditional mean')
+for l=1:r
+    cmean = mean(y(:,:,:,1:l),4);
+    % disp('checking')
+    %for i=1:L
+    %    for ix=1:dim,
+    %        err(ix,i) = mean(cmean(ix,i,:))-mean(mean((Y(ix,:,:))));
+    %    end
+    %end
+    %err_mean=norm(err(:))
 
-disp('mean of its variance')
-V = mean(var(cmean,1,3),3);
-% ymean(i) = mean of Y(i)
-% ymean = mean(cmean,3);
-% variance due to input j
-% V = mean((cmean-ymean*ones(1,N)).^2,2);
+    % disp('mean of its variance')
+    V = mean(var(cmean,1,3),3);
+    % ymean(i) = mean of Y(i)
+    % ymean = mean(cmean,3);
+    % variance due to input j
+    % V = mean((cmean-ymean*ones(1,N)).^2,2);
+    fprintf('%3i repeats',l)
+    for i=1:L
+        fprintf(' param %3i max %g avg %g',i,max(V(:,i)),mean(V(:,i)))
+    end
+    fprintf('\n')
 end
