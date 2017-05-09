@@ -32,6 +32,7 @@ for i=1:L
     end
 end
 
+disp('matching')
 % y(:,i,j,l) = Y(:,ix,l) such that X(i) is in j                                                                                                                                    -th bin in repetition l
 y=zeros(dim,L,N,r);
 for i=1:L                   % variable
@@ -48,15 +49,17 @@ end
 
 % cmean(:,i,j) = mean of y over repetitions conditional on X(i) in j-th bin
 
+disp('conditional mean')
 cmean = mean(y,4);
-for i=1:L
-    for ix=1:dim,
-        err(ix,i) = mean(cmean(ix,i,:))-mean(mean((Y(ix,:,:))));
-    end
-end
-err
+% disp('checking')
+%for i=1:L
+%    for ix=1:dim,
+%        err(ix,i) = mean(cmean(ix,i,:))-mean(mean((Y(ix,:,:))));
+%    end
+%end
+%err_mean=norm(err(:))
 
-% mean of its variance
+disp('mean of its variance')
 V = mean(var(cmean,1,3),3);
 % ymean(i) = mean of Y(i)
 % ymean = mean(cmean,3);

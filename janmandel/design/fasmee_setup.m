@@ -1,10 +1,9 @@
-function fasmee_setup
+function V=fasmee_setup
 root_dir='/glade/u/home/jmandel/scratch/WRF341F_jm2_devel/wrffire/wrfv2_fire/test'
 template_dir=[root_dir,'/Fishlake_template']
 wksp_dir = '/glade/u/home/jmandel/Projects/wrfxpy/wksp'
 
-r=10
-generate=2
+generate=0
 clone=1
 analysis=1
 
@@ -40,7 +39,9 @@ if clone
                0.1,...           % probability value outside given interval
                N)                % sample points
 
-%P =[1;1;5]
+%0P =[1;1;5]
+
+r=3, P=P(:,:,1:r);
 
 [L,N,r]=size(P);
 
@@ -97,6 +98,7 @@ end  % for i
 end  % for k
 end  % clone
 
+r=3
 if analysis == 1
     wrfout = 'wrfout_d05_2014-09-03_16:30:01'
     X=get_params_vec(P,D);
@@ -107,12 +109,13 @@ if analysis == 1
                 fprintf('replicant %03i vector %i job_id %s\n',k,i,job_id)
                 job_id = get_job_id(P,i,k)
                 f = [wksp_dir,'/',job_id,'/wrf/',wrfout];  % where wrf will run
-                p=nc2struct(f,{'FGRNHFX'}.{},ts}
+                p=nc2struct(f,{'FGRNHFX'},{},ts)
                 s=size(p.fgrnhfx);
-                Y(:,i,k)=p.fgrnhfx;
+                Y(:,i,k)=p.fgrnhfx(:);
             end
         end
         V=effect(X,Y);
+        
     end
     
 end % analysis
