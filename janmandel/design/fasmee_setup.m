@@ -5,7 +5,7 @@ wksp_dir = '/glade/u/home/jmandel/Projects/wrfxpy/wksp'
 
 r=10
 generate=2
-clone=0
+clone=1
 analysis=1
 
 
@@ -44,23 +44,22 @@ if clone
 
 [L,N,r]=size(P);
 
+X = get_params_vec(P,D);
 
 for k=2:r
-    for j=1:L
-        pp=P(j,:,k);
-        X(j,:)=D(j,pp);
-    end
+    
     for i = 1:N,
 
-    job_id = get_job_id(P,i,k)
+    job_id = get_job_id(P,i,k);
     
-    fmc_gc_10h = X(1,i);
-    fire_ext_grnd = X(2,i);
-    fire_atm_feedback=X(3,i);
+    fmc_gc_10h = X(1,i,k);
+    fire_ext_grnd = X(2,i,k);
+    fire_atm_feedback=X(3,i,k);
     description = sprintf('%s fmc_gc_10h=%g fire_ext_grnd=%g fire_atm_feedback=%g',...
         job_id,fmc_gc_10h,fire_ext_grnd,fire_atm_feedback);
     disp(description)
 
+    if clone > 1
     job_dir = [wksp_dir,'/',job_id]
     wrf_dir = [root_dir,'/',job_id]  % where wrf will run
 
@@ -92,20 +91,31 @@ for k=2:r
     fmc_gc(:,:,4)=0.05;
     fmc_gc(:,:,5)=0.78;
     ncreplace(wrf_f,'FMC_GC',fmc_gc);
+    end
     
 end  % for i
 end  % for k
 end  % clone
 
-if analysis == 1,
-    for k=1:r
-        for i=1:N
-            job_id = get_job_id(P,i,k);
-            fprintf('replicant %03i vector %i job_id %s\n',k,i,job_id)
+if analysis == 1
+    wrfout = 'wrfout_d05_2014-09-03_16:30:01'
+    X=get_params_vec(P,D);
+    for ts=1
+        for k=1:r
+            for i=1:N
+                job_id = get_job_id(P,i,k);
+                fprintf('replicant %03i vector %i job_id %s\n',k,i,job_id)
+                job_id = get_job_id(P,i,k)
+                f = [wksp_dir,'/',job_id,'/wrf/',wrfout];  % where wrf will run
+                p=nc2struct(f,{'FGRNHFX'}.{},ts}
+                s=size(p.fgrnhfx);
+                Y(:,i,k)=p.fgrnhfx;
+            end
         end
+        V=effect(X,Y);
     end
     
-end % effect
+end % analysis
 
 end  % function fasmee_setup
 
@@ -113,3 +123,13 @@ function job_id = get_job_id(P,i,k)
     case_id=sprintf('%03i_%s',k,num2str(P(:,i,k))');
     job_id = ['LHS3_Fishlake_',case_id];
 end
+
+function X = get_params_vec(P,D)
+[L,N,r]=size(P)
+    for k=1:r
+        for j=1:L
+            pp=P(j,:,k);
+            X(j,:,k)=D(j,pp);
+        end
+    end
+end 

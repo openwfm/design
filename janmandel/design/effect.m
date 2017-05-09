@@ -32,7 +32,7 @@ for i=1:L
     end
 end
 
-% y(:,i,j,l) = Y(:,ix,l) such that X(i) is in j-th bin in repetition l
+% y(:,i,j,l) = Y(:,ix,l) such that X(i) is in j                                                                                                                                    -th bin in repetition l
 y=zeros(dim,L,N,r);
 for i=1:L                   % variable
     for j=1:N               % sample point
