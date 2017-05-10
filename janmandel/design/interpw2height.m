@@ -1,25 +1,32 @@
-function wh=interpw2height(p,h)
+function varh=interpw2height(p,var,h)
 %  wh=interp2height(p,h)
 
 alt_at_w=(p.ph+p.phb)/9.81; % geopotential altitude at w-points
 for k=1:size(alt_at_w,3)    % convert into height above the terrain
     hgt_at_w(:,:,k,:)=alt_at_w(:,:,k,:)-alt_at_w(:,:,1,:);
 end
+if strcmp(var,'w')
+    hgt=hgt_at_w(:,:,:,:);
+else  % assuming given in center
+    hgt=0.5*(hgt_at_w(:,:,2:end,:)+hgt_at_w(:,:,1:end-1,:));
+end
 [m,n,k,t]=size(p.w);
-wh=zeros(m,n,t);
+varath=zeros(m,n,t);
+kk=size(hgt,3);
+var=p.(var);
 for it=1:t
     for in=1:n
         for im=1:m
             %x=squeeze(hgt_at_w(im,in,:,it));
             %y=squeeze(p.w(im,in,:,it));
-            for i=2:k
-                x1=hgt_at_w(im,in,i,it);
+            for i=2:kk
+                x1=hgt(im,in,i,it);
                 if h<x1
                 else
-                    y1=p.w(im,in,i,it);
-                    y0=p.w(im,in,i-1,it);
-                    x0=hgt_at_w(im,in,i-1,it);
-                    wh(im,in,it)=y1+(y1-y0)*(h-x0)/(x1-x0);
+                    y1=var(im,in,i,it);
+                    y0=var(im,in,i-1,it);
+                    x0=hgt(im,in,i-1,it);
+                    varath(im,in,it)=y1+(y1-y0)*(h-x0)/(x1-x0);
                     break
                 end
             end

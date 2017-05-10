@@ -110,12 +110,16 @@ if analysis == 1
                 fprintf('replicant %03i vector %i job_id %s\n',k,i,job_id)
                 job_id = get_job_id(P,i,k)
                 f = [wksp_dir,'/',job_id,'/wrf/',wrfout];  % where wrf will run
-                p=nc2struct(f,{'FGRNHFX','W','PH','PHB'},{})
+                p=nc2struct(f,{'FGRNHFX','W','PH','PHB','tr17_1'},{})
                 fgrnhfx(:,i,k)=p.fgrnhfx(:);
-                p.w10w=interpw2height(p,10);
-                w10(:,i,k)=p.w10w(:);
-                p.w20w=interpw2height(p,20);
-                w20(:,i,k)=p.w20w(:);
+                p.w10=interpw2height(p,'w',10);
+                w10(:,i,k)=p.w10(:);
+                p.w20=interpw2height(p,'w',20);
+                w20(:,i,k)=p.w20(:);
+                p.smoke10=interpw2height(p,'tr17_1',10);
+                smoke10(:,i,k)=p.smoke10(:);
+                p.smoke20=interpw2height(p,'tr17_1',20);
+                smoke20(:,i,k)=p.smoke20(:);
                 if k==1 & i==1,
                     out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1)
                 end
@@ -125,10 +129,16 @@ if analysis == 1
         fgrnhfx_var=effect(X,fgrnhfx);
         out.fgrnhfx_var=reshape(fgrnhfx_var,[size(p.fgrnhfx),L]);     
         w10_var=effect(X,w10);
-        out.w10_var=reshape(w10_var,[size(w10w),L]);     
+        out.w10_var=reshape(w10_var,[size(p.w10),L]);     
         w20_var=effect(X,w20);
-        out.w20_var=reshape(w20_var,[size(w20w),L]);     
-	out.X=X;
+        out.w20_var=reshape(w20_var,[size(p.w20),L]);
+        smoke10_var=effect(X,smoke10);
+        out.smoke10_var=reshape(smoke10_var,[size(p.smoke10),L]);
+        smoke20_var=effect(X,smoke20);
+        out.smoke20_var=reshape(smoke20_var,[size(p.smoke20),L]);
+        out.X=X;
+        out.P=P;
+        out.D=D;
     % end
     
 end % analysis
