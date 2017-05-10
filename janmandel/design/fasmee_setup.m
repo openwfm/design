@@ -41,7 +41,8 @@ if clone
 
 %0P =[1;1;5]
 
-r=3, P=P(:,:,1:r);
+r=5
+P=P(:,:,1:r)
 
 [L,N,r]=size(P);
 
@@ -98,7 +99,6 @@ end  % for i
 end  % for k
 end  % clone
 
-r=3
 
 if analysis == 1
     wrfout = 'wrfout_d05_2014-09-03_16:30:01'
@@ -124,9 +124,9 @@ if analysis == 1
         fgrnhfx_var=effect(X,fgrnhfx);
         out.fgrnhfx_var=reshape(fgrnhfx_var,[size(p.fgrnhfx),L]);     
         w10_var=effect(X,w10);
-        out.w10_var=reshape(fgrnhfx_var,[size(w10w),L]);     
+        out.w10_var=reshape(w10_var,[size(w10w),L]);     
         w20_var=effect(X,w20);
-        out.w20_var=reshape(fgrnhfx_var,[size(w20w),L]);     
+        out.w20_var=reshape(w20_var,[size(w20w),L]);     
     % end
     
 end % analysis
