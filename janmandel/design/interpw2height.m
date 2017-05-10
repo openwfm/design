@@ -1,4 +1,4 @@
-function varh=interpw2height(p,var,h)
+function var_at_h=interpw2height(p,var,h)
 %  wh=interp2height(p,h)
 
 alt_at_w=(p.ph+p.phb)/9.81; % geopotential altitude at w-points
@@ -7,11 +7,13 @@ for k=1:size(alt_at_w,3)    % convert into height above the terrain
 end
 if strcmp(var,'w')
     hgt=hgt_at_w(:,:,:,:);
+    fprintf('interpolating staggered variable %s to height %im\n',var,h)
 else  % assuming given in center
     hgt=0.5*(hgt_at_w(:,:,2:end,:)+hgt_at_w(:,:,1:end-1,:));
+    fprintf('interpolating centered variable %s to height %im\n',var,h)
 end
 [m,n,k,t]=size(p.w);
-varath=zeros(m,n,t);
+var_at_h=zeros(m,n,t);
 kk=size(hgt,3);
 var=p.(var);
 for it=1:t
@@ -26,7 +28,7 @@ for it=1:t
                     y1=var(im,in,i,it);
                     y0=var(im,in,i-1,it);
                     x0=hgt(im,in,i-1,it);
-                    varath(im,in,it)=y1+(y1-y0)*(h-x0)/(x1-x0);
+                    var_at_h(im,in,it)=y1+(y1-y0)*(h-x0)/(x1-x0);
                     break
                 end
             end
