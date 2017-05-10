@@ -25,15 +25,4 @@ for im=m:-1:1
         end
     end
 end
-end
-
-function yq=fastinterp1(x,y,xq)
-    for i=2:length(x)
-        if xq<x(i)
-        else
-           yq=y(i-1)+(y(i)-y(i-1))*(xq-x(i-1))/(x(i)-x(i-1));
-           break
-        end
-    end
-end
-            
+end            
