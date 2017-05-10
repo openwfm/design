@@ -112,21 +112,23 @@ if analysis == 1
                 f = [wksp_dir,'/',job_id,'/wrf/',wrfout];  % where wrf will run
                 p=nc2struct(f,{'FGRNHFX','W','PH','PHB'},{})
                 fgrnhfx(:,i,k)=p.fgrnhfx(:);
-                w10w=interpw2height(p,10);
-                w10(:,i,k)=w10w(:);
-                w20w=interpw2height(p,20);
-                w20(:,i,k)=w20w(:);
+                p.w10w=interpw2height(p,10);
+                w10(:,i,k)=p.w10w(:);
+                p.w20w=interpw2height(p,20);
+                w20(:,i,k)=p.w20w(:);
                 if k==1 & i==1,
                     out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1)
                 end
             end
         end
+        out.p(i,k)=p;
         fgrnhfx_var=effect(X,fgrnhfx);
         out.fgrnhfx_var=reshape(fgrnhfx_var,[size(p.fgrnhfx),L]);     
         w10_var=effect(X,w10);
         out.w10_var=reshape(w10_var,[size(w10w),L]);     
         w20_var=effect(X,w20);
         out.w20_var=reshape(w20_var,[size(w20w),L]);     
+	out.X=X;
     % end
     
 end % analysis
