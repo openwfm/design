@@ -11,7 +11,7 @@ for im=m:-1:1
         for it=t:-1:1
             h_vec=squeeze(hgt_at_w(im,in,:,it));
             w_vec=squeeze(p.w(im,in,:,it));
-            w(im,in,:,it)=interp1(h_vec,w_vec,h);
+            w(im,in,:,it)=fastinterp1(h_vec,w_vec,h);
         end
     end
 end
