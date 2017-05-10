@@ -28,7 +28,7 @@ for it=1:t
                     y1=var(im,in,i,it);
                     y0=var(im,in,i-1,it);
                     x0=hgt(im,in,i-1,it);
-                    var_at_h(im,in,it)=y1+(y1-y0)*(h-x0)/(x1-x0);
+                    var_at_h(im,in,it)=y0+(y1-y0)*(h-x0)/(x1-x0);
                     break
                 end
             end
