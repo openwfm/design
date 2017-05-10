@@ -9,17 +9,19 @@ end
 for im=m:-1:1
     for in=n:-1:1
         for it=t:-1:1
-            
-            x=squeeze(hgt_at_w(im,in,:,it));
-            y=squeeze(p.w(im,in,:,it));
-            %for i=2:k
-            %    if h<x(i)
-            %    else
-            %        yq=y(i-1)+(y(i)-y(i-1))*(h-x(i-1))/(x(i)-x(i-1));
-            %        break
-            %    end
-            %end
-            w(im,in,it)=fastinterp1(x,y,h);
+            %x=squeeze(hgt_at_w(im,in,:,it));
+            %y=squeeze(p.w(im,in,:,it));
+            for i=2:k
+                x1=hgt_at_w(im,in,i,it);
+                if h<x1
+                else
+                    y1=p.w(im,in,i,it);
+                    y0=p.w(im,in,i-1,it);
+                    x0=hgt_at_w(im,in,i-1,it);
+                    w(im,in,it)=y1+(y1-y0)*(h-x0)/(x1-x0);
+                    break
+                end
+            end
         end
     end
 end
