@@ -8,19 +8,21 @@ end
 [m,n,k,t]=size(p.w);
 for im=m:-1:1
     for in=n:-1:1
-        for ik=k:-1:1
-            xx(im,in,ik)=im;
-            yy(im,in,ik)=in;
+        for it=t:-1:1
+            h_vec=squeeze(hgt_at_w(im,in,:,it));
+            w_vec=squeeze(p.w(im,in,:,it));
+            w(im,in,:,it)=interp1(h_vec,w_vec,h);
         end
     end
 end
-for it=1:t,
-    hh = hgt_at_w(:,:,:,it);
-    ww = p.w(:,:,:,it);
-    F=griddedInterpolant(xx,yy,hh,ww);
-    hh = ones(size(xx));
-    for ih=1:length(h),
-        fprintf('Interpolating W to %g m',h(ih))
-        w(:,:,it)=F(xx,yy,hh*h(ih));
+end
+
+function yq=fastinterp1(x,y,xq)
+    for i=2:length(x)
+        if xq<x(i)
+        else
+           yq=y(i-1)+(y(i)-y(i-1))*(xq-x(i-1))/(x(i)-x(i-1));
+        end
     end
 end
+            
