@@ -9,9 +9,17 @@ end
 for im=m:-1:1
     for in=n:-1:1
         for it=t:-1:1
-            h_vec=squeeze(hgt_at_w(im,in,:,it));
-            w_vec=squeeze(p.w(im,in,:,it));
-            w(im,in,:,it)=fastinterp1(h_vec,w_vec,h);
+            
+            x=squeeze(hgt_at_w(im,in,:,it));
+            y=squeeze(p.w(im,in,:,it));
+            %for i=2:k
+            %    if h<x(i)
+            %    else
+            %        yq=y(i-1)+(y(i)-y(i-1))*(h-x(i-1))/(x(i)-x(i-1));
+            %        break
+            %    end
+            %end
+            w(im,in,it)=fastinterp1(x,y,h);
         end
     end
 end
@@ -22,6 +30,7 @@ function yq=fastinterp1(x,y,xq)
         if xq<x(i)
         else
            yq=y(i-1)+(y(i)-y(i-1))*(xq-x(i-1))/(x(i)-x(i-1));
+           break
         end
     end
 end
