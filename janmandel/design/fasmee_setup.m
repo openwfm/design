@@ -5,6 +5,8 @@ wksp_dir = '/glade/u/home/jmandel/Projects/wrfxpy/wksp'
 
 generate=0
 clone=1
+extract=0
+
 analysis=1
 
 
@@ -100,7 +102,7 @@ end  % for k
 end  % clone
 
 
-if analysis == 1
+if extract
     wrfout = 'wrfout_d05_2014-09-03_16:30:01'
     X=get_params_vec(P,D);
     % for ts=1
@@ -111,6 +113,26 @@ if analysis == 1
                 job_id = get_job_id(P,i,k)
                 f = [wksp_dir,'/',job_id,'/wrf/',wrfout];  % where wrf will run
                 p=nc2struct(f,{'FGRNHFX','W','PH','PHB','tr17_1'},{})
+                p.job_id=job.id;
+                if k==1 & i==1,
+                    out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1)
+                end
+                out.p(i,k)=p;
+            end
+        end
+        out.X=X;
+        out.P=P;
+        out.D=D;
+    % end
+    save -v7.3 out out
+else
+    load out
+end % extract
+
+if analysis,
+        for k=1:r
+            for i=1:N
+                p=out.p(i,k);
                 fgrnhfx(:,i,k)=p.fgrnhfx(:);
                 p.w10=interpw2height(p,'w',10);
                 w10(:,i,k)=p.w10(:);
@@ -120,9 +142,6 @@ if analysis == 1
                 smoke10(:,i,k)=p.smoke10(:);
                 p.smoke20=interpw2height(p,'tr17_1',20);
                 smoke20(:,i,k)=p.smoke20(:);
-                if k==1 & i==1,
-                    out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1)
-                end
                 out.p(i,k)=p;
             end
         end
@@ -141,13 +160,8 @@ if analysis == 1
         disp('smoke at 20m ')
         smoke20_var=effect(X,smoke20);
         out.smoke20_var=reshape(smoke20_var,[size(p.smoke20),L]);
-        out.X=X;
-        out.P=P;
-        out.D=D;
-    % end
-    
-end % analysis
 
+end % process
 end  % function fasmee_setup
 
 function job_id = get_job_id(P,i,k)
