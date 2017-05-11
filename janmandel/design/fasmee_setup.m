@@ -123,17 +123,22 @@ if analysis == 1
                 if k==1 & i==1,
                     out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1)
                 end
+                out.p(i,k)=p;
             end
         end
-        out.p(i,k)=p;
+        disp('fgrnhfx ')
         fgrnhfx_var=effect(X,fgrnhfx);
         out.fgrnhfx_var=reshape(fgrnhfx_var,[size(p.fgrnhfx),L]);     
+        disp('w at 10m ')
         w10_var=effect(X,w10);
         out.w10_var=reshape(w10_var,[size(p.w10),L]);     
+        disp('w at 20m ')
         w20_var=effect(X,w20);
         out.w20_var=reshape(w20_var,[size(p.w20),L]);
+        disp('smoke at 10m ')
         smoke10_var=effect(X,smoke10);
         out.smoke10_var=reshape(smoke10_var,[size(p.smoke10),L]);
+        disp('smoke at 20m ')
         smoke20_var=effect(X,smoke20);
         out.smoke20_var=reshape(smoke20_var,[size(p.smoke20),L]);
         out.X=X;
