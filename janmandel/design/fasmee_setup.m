@@ -127,6 +127,7 @@ if extract
     save -v7.3 out out
 else
     if ~exist('out','var')
+        disp('variable out not given, loading from file')
         load out
     end
 end % extract
@@ -134,39 +135,37 @@ end % extract
 if analysis,
         for k=1:r
             for i=1:N
-                fgrnhfx(:,i,k)=out.p(i,k).fgrnhfx(:);
+                fprintf('vertical interpolation replicant %i run %i\n',k,i)
                 out.p(i,k).w10=interpw2height(out.p(i,k),'w',10,'terrain');
-                w10(:,i,k)=out.p(i,k).w10(:);
                 out.p(i,k).w20=interpw2height(out.p(i,k),'w',20,'terrain');
-                w20(:,i,k)=out.p(i,k).w20(:);
                 out.p(i,k).smoke10=interpw2height(out.p(i,k),'tr17_1',10,'terrain');
-                smoke10(:,i,k)=out.p(i,k).smoke10(:);
                 out.p(i,k).smoke20=interpw2height(out.p(i,k),'tr17_1',20,'terrain');
-                smoke20(:,i,k)=out.p(i,k).smoke20(:);
                 out.p(i,k).smoke2500a=interpw2height(out.p(i,k),'tr17_1',2500,'sea');
-                smoke2500a(:,i,k)=out.p(i,k).smoke2500a(:);
+                out.p(i,k).smoke3000a=interpw2height(out.p(i,k),'tr17_1',3000,'sea');
             end
         end
-        disp('fgrnhfx ')
-        fgrnhfx_var=effect(X,fgrnhfx);
-        out.fgrnhfx_var=reshape(fgrnhfx_var,[size(out.p(1,1).fgrnhfx),L]);     
-        disp('w at 10m height above terrain')
-        w10_var=effect(X,w10);
-        out.w10_var=reshape(w10_var,[size(out.p(1,1).w10),L]);     
-        disp('w at 20m height above terrain')
-        w20_var=effect(X,w20);
-        out.w20_var=reshape(w20_var,[size(out.p(1,1).w20),L]);
-        disp('smoke at 10m height above terrain')
-        smoke10_var=effect(X,smoke10);
-        out.smoke10_var=reshape(smoke10_var,[size(out.p(1,1).smoke10),L]);
-        disp('smoke at 20m height above terrain')
-        smoke20_var=effect(X,smoke20);
-        out.smoke20_var=reshape(smoke20_var,[size(out.p(1,1).smoke20),L]);
-        disp('smoke at 2000m altitude')
-        smoke2500a_var=effect(X,smoke2500a);
-        out.smoke2500a_var=reshape(smoke2500a_var,[size(out.p(1,1).smoke2500a),L]);
-end % process
+        out.fgrnhfx_var=effectnd(X,out.p,'fgrnhfx');
+        out.w10_var=effectnd(X,out.p,'w10');
+        out.w20_var=effectnd(X,out.p,'w20');
+        out.smoke10_var=effectnd(X,out.p,'smoke10');
+        out.smoke20_var=effectnd(X,out.p,'smoke20');
+        out.smoke2500a_var=effectnd(X,out.p,'smoke2500a');
+        out.smoke3000a_var=effectnd(X,out.p,'smoke3000a');
+end % analysis
+
 end  % function fasmee_setup
+
+function v_var=effectnd(X,p,f)
+    [L,N,r]=size(X);
+    fprintf('effect on %s\n',f)
+    for k=1:r
+        for i=1:N
+            v(:,i,k)=p(i,k).(f)(:);
+        end
+    end
+    v_var=effect(X,v);
+    v_var=reshape(v_var,[size(p(1,1).(f)),L]);
+end    
 
 function job_id = get_job_id(P,i,k)
     case_id=sprintf('%03i_%s',k,num2str(P(:,i,k))');

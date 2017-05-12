@@ -10,22 +10,22 @@ function var_at_h=interpw2height(p,var,h,d)
 alt_at_w=(p.ph+p.phb)/9.81; % geopotential altitude at w-points
 switch d
     case {'h','height', 'height terrain','terrain'}
-        fprintf('Height %im above the terrain\n',h)
+        above='terrain';
         for k=1:size(alt_at_w,3)    % convert into height above the terrain
             hgt_at_w(:,:,k,:)=alt_at_w(:,:,k,:)-alt_at_w(:,:,1,:);
         end
     case {'s','a','altitude','sea'}
-        fprintf('Altitude %im above the sea level\n',h)
+        above='sea level';
         hgt_at_w = alt_at_w;
     otherwise
         error(fprintf('interpw2height: invalid arg 3'))
 end
 if strcmp(var,'w')
     hgt=hgt_at_w;
-    fprintf('interpolating staggered variable %s to height %im\n',var,h)
+    fprintf('Interpolating staggered variable %s to height %im above the %s\n',var,h,above)
 else  % assuming given in center
     hgt=0.5*(hgt_at_w(:,:,2:end,:)+hgt_at_w(:,:,1:end-1,:));
-    fprintf('interpolating centered variable %s to height %im\n',var,h)
+    fprintf('interpolating centered variable %s to height %im above the %s\n',var,h,above)
 end
 [m,n,k,t]=size(p.w);
 var_at_h=zeros(m,n,t);
@@ -47,7 +47,7 @@ for it=1:t
                     end
                 end
             else
-                var_at_h(im,in,it)=NaN;
+                var_at_h(im,in,it)=0;
             end
         end
     end
