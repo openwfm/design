@@ -1,5 +1,5 @@
-function V=effect(X,Y)
-% V = effect(X,Y) 
+function [V,varargout]=effect(X,Y)
+% [V,A] = effect(X,Y) 
 % Evaluating effect of parameters
 % Input
 %   X   matrix of input values (#parameters, #sampling points, #repetitions) from rLHS
@@ -9,6 +9,7 @@ function V=effect(X,Y)
 %
 % Output
 %   V   V(:,i) is the variance in Y due to parameter i 
+%   A   mean of the inputs X
 %
 % Reference: Andrea Saltelli, Stefano Tarantola, Francesca Campolongo
 % and Marco Ratto, Sensitivity Analysis in Practice, John Wiley 2004
@@ -71,4 +72,8 @@ for l=1:r
         fprintf(' param %3i max %g avg %g',i,max(V(:,i)),mean(V(:,i)))
     end
     fprintf('\n')
+end
+if nargout>=2
+    varargout(1)={mean(mean(Y,3),2)}; % mean over indexes 2 and 2
+end
 end

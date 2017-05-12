@@ -6,7 +6,6 @@ wksp_dir = '/glade/u/home/jmandel/Projects/wrfxpy/wksp'
 generate=0
 clone=1
 extract=0
-
 analysis=1
 
 
@@ -14,11 +13,11 @@ if generate == 1
     N = 5;
     P=rLHS(D,1)
 
-save rep1 P D N
+    save rep1 P D N
 
 else
 
-load rep1
+    load rep1
     
 end
 
@@ -50,7 +49,7 @@ P=P(:,:,1:r)
 
 X = get_params_vec(P,D);
 
-for k=2:r
+for k=1:r
     
     for i = 1:N,
 
@@ -142,30 +141,22 @@ if analysis,
                 out.p(i,k).smoke20=interpw2height(out.p(i,k),'tr17_1',20,'terrain');
                 out.p(i,k).smoke2500a=interpw2height(out.p(i,k),'tr17_1',2500,'sea');
                 out.p(i,k).smoke3000a=interpw2height(out.p(i,k),'tr17_1',3000,'sea');
+                out.p(i,k).smoke4000a=interpw2height(out.p(i,k),'tr17_1',4000,'sea');
+                out.p(i,k).smoke5000a=interpw2height(out.p(i,k),'tr17_1',5000,'sea');
             end
         end
-        out.fgrnhfx_var=effectnd(X,out.p,'fgrnhfx');
-        out.w10_var=effectnd(X,out.p,'w10');
-        out.w20_var=effectnd(X,out.p,'w20');
-        out.smoke10_var=effectnd(X,out.p,'smoke10');
-        out.smoke20_var=effectnd(X,out.p,'smoke20');
-        out.smoke2500a_var=effectnd(X,out.p,'smoke2500a');
-        out.smoke3000a_var=effectnd(X,out.p,'smoke3000a');
+        out.fgrnhfx=effectnd(X,out.p,'fgrnhfx');
+        out.w10=effectnd(X,out.p,'w10');
+        out.w20=effectnd(X,out.p,'w20');
+        out.smoke10=effectnd(X,out.p,'smoke10');
+        out.smoke20=effectnd(X,out.p,'smoke20');
+        out.smoke2500a=effectnd(X,out.p,'smoke2500a');
+        out.smoke3000a=effectnd(X,out.p,'smoke3000a');
+        out.smoke4000a=effectnd(X,out.p,'smoke4000a');
+        out.smoke5000a=effectnd(X,out.p,'smoke5000a');
 end % analysis
 
 end  % function fasmee_setup
-
-function v_var=effectnd(X,p,f)
-    [L,N,r]=size(X);
-    fprintf('effect on %s\n',f)
-    for k=1:r
-        for i=1:N
-            v(:,i,k)=p(i,k).(f)(:);
-        end
-    end
-    v_var=effect(X,v);
-    v_var=reshape(v_var,[size(p(1,1).(f)),L]);
-end    
 
 function job_id = get_job_id(P,i,k)
     case_id=sprintf('%03i_%s',k,num2str(P(:,i,k))');
