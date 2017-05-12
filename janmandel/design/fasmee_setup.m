@@ -137,6 +137,10 @@ if analysis,
                 fprintf('vertical interpolation replicant %i run %i\n',k,i)
                 out.p(i,k).w10=interpw2height(out.p(i,k),'w',10,'terrain');
                 out.p(i,k).w20=interpw2height(out.p(i,k),'w',20,'terrain');
+                out.p(i,k).w2500a=interpw2height(out.p(i,k),'w',2500,'sea');
+                out.p(i,k).w3000a=interpw2height(out.p(i,k),'w',3000,'sea');
+                out.p(i,k).w4000a=interpw2height(out.p(i,k),'w',4000,'sea');
+                out.p(i,k).w5000a=interpw2height(out.p(i,k),'w',5000,'sea');
                 out.p(i,k).smoke10=interpw2height(out.p(i,k),'tr17_1',10,'terrain');
                 out.p(i,k).smoke20=interpw2height(out.p(i,k),'tr17_1',20,'terrain');
                 out.p(i,k).smoke2500a=interpw2height(out.p(i,k),'tr17_1',2500,'sea');

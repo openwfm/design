@@ -1,6 +1,10 @@
 function [V,varargout]=effect(X,Y)
-% [V,A] = effect(X,Y) 
-% Evaluating effect of parameters
+% A = effect(X,Y)
+% [V,mean_all] = effect(X,Y)
+% [V,mean_all,var_all] = effect(X,Y)
+%
+% Evaluating effect of parameters from repeated Latin Hypercube Sampling
+%
 % Input
 %   X   matrix of input values (#parameters, #sampling points, #repetitions) from rLHS
 %       X(i,:,r) are random permutations of the same sample points
@@ -8,8 +12,10 @@ function [V,varargout]=effect(X,Y)
 %       Y(:,j,l) is the output generated from parameter vector X(:,j,l)
 %
 % Output
-%   V   V(:,i) is the variance in Y due to parameter i 
-%   A   mean of the inputs X
+%   V           V(:,i) is the variance in Y due to parameter i 
+%   mean_all    mean of Y over all inputs
+%   var_all     variance of Y over all inputs
+%               in general this does not equal to sum of V only for linear model
 %
 % Reference: Andrea Saltelli, Stefano Tarantola, Francesca Campolongo
 % and Marco Ratto, Sensitivity Analysis in Practice, John Wiley 2004
@@ -19,7 +25,7 @@ function [V,varargout]=effect(X,Y)
 [L,N,r]=size(X); 
 [dim,NN,rr]=size(Y);
 if NN~=N | rr~=r,
-    error('incompatible dimension')
+    error('incompatible dimensions of arguments')
 end
 
 % retrieve the sampling points and check for Latin Hypercube
@@ -74,6 +80,14 @@ for l=1:r
     fprintf('\n')
 end
 if nargout>=2
-    varargout(1)={mean(mean(Y,3),2)}; % mean over indexes 2 and 2
+    ymean=mean(mean(Y,3),2); % mean over indexes 2 and 2
+    y2 = reshape(Y,[dim,N*r]);
+    ymean2=mean(y2,2);
+    err_ymean=big(ymean-ymean2)
+    varargout(1)={ymean};
+    if nargout>=3
+        yvar=var(y2,2);
+        varargout(2)={yvar};
+    end
 end
 end
