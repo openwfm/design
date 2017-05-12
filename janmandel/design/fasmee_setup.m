@@ -1,4 +1,4 @@
-function out=fasmee_setup
+function out=fasmee_setup(out)
 root_dir='/glade/u/home/jmandel/scratch/WRF341F_jm2_devel/wrffire/wrfv2_fire/test'
 template_dir=[root_dir,'/Fishlake_template']
 wksp_dir = '/glade/u/home/jmandel/Projects/wrfxpy/wksp'
@@ -126,41 +126,45 @@ if extract
     % end
     save -v7.3 out out
 else
-    load out
+    if ~exist('out','var')
+        load out
+    end
 end % extract
 
 if analysis,
         for k=1:r
             for i=1:N
-                p=out.p(i,k);
-                fgrnhfx(:,i,k)=p.fgrnhfx(:);
-                p.w10=interpw2height(p,'w',10);
-                w10(:,i,k)=p.w10(:);
-                p.w20=interpw2height(p,'w',20);
-                w20(:,i,k)=p.w20(:);
-                p.smoke10=interpw2height(p,'tr17_1',10);
-                smoke10(:,i,k)=p.smoke10(:);
-                p.smoke20=interpw2height(p,'tr17_1',20);
-                smoke20(:,i,k)=p.smoke20(:);
-                out.p(i,k)=p;
+                fgrnhfx(:,i,k)=out.p(i,k).fgrnhfx(:);
+                out.p(i,k).w10=interpw2height(out.p(i,k),'w',10,'terrain');
+                w10(:,i,k)=out.p(i,k).w10(:);
+                out.p(i,k).w20=interpw2height(out.p(i,k),'w',20,'terrain');
+                w20(:,i,k)=out.p(i,k).w20(:);
+                out.p(i,k).smoke10=interpw2height(out.p(i,k),'tr17_1',10,'terrain');
+                smoke10(:,i,k)=out.p(i,k).smoke10(:);
+                out.p(i,k).smoke20=interpw2height(out.p(i,k),'tr17_1',20,'terrain');
+                smoke20(:,i,k)=out.p(i,k).smoke20(:);
+                out.p(i,k).smoke2500a=interpw2height(out.p(i,k),'tr17_1',2500,'sea');
+                smoke2500a(:,i,k)=out.p(i,k).smoke2500a(:);
             end
         end
         disp('fgrnhfx ')
         fgrnhfx_var=effect(X,fgrnhfx);
-        out.fgrnhfx_var=reshape(fgrnhfx_var,[size(p.fgrnhfx),L]);     
-        disp('w at 10m ')
+        out.fgrnhfx_var=reshape(fgrnhfx_var,[size(out.p(1,1).fgrnhfx),L]);     
+        disp('w at 10m height above terrain')
         w10_var=effect(X,w10);
-        out.w10_var=reshape(w10_var,[size(p.w10),L]);     
-        disp('w at 20m ')
+        out.w10_var=reshape(w10_var,[size(out.p(1,1).w10),L]);     
+        disp('w at 20m height above terrain')
         w20_var=effect(X,w20);
-        out.w20_var=reshape(w20_var,[size(p.w20),L]);
-        disp('smoke at 10m ')
+        out.w20_var=reshape(w20_var,[size(out.p(1,1).w20),L]);
+        disp('smoke at 10m height above terrain')
         smoke10_var=effect(X,smoke10);
-        out.smoke10_var=reshape(smoke10_var,[size(p.smoke10),L]);
-        disp('smoke at 20m ')
+        out.smoke10_var=reshape(smoke10_var,[size(out.p(1,1).smoke10),L]);
+        disp('smoke at 20m height above terrain')
         smoke20_var=effect(X,smoke20);
-        out.smoke20_var=reshape(smoke20_var,[size(p.smoke20),L]);
-
+        out.smoke20_var=reshape(smoke20_var,[size(out.p(1,1).smoke20),L]);
+        disp('smoke at 2000m altitude')
+        smoke2500a_var=effect(X,smoke2500a);
+        out.smoke2500a_var=reshape(smoke2500a_var,[size(out.p(1,1).smoke2500a),L]);
 end % process
 end  % function fasmee_setup
 

@@ -1,9 +1,24 @@
-function var_at_h=interpw2height(p,var,h)
-%  wh=interp2height(p,h)
+function var_at_h=interpw2height(p,var,h,d)
+%  wh=interp2height(p,var,h)
+%  input:
+%   p   structure with fields ph, phb, and the variable, from WRF
+%   var string, the name of the variable (4D, the last is timestep)
+%   h   height (m or hPa) to interpolate to
+%   d   string: 'h' or 'height terrain' height is in m above the terrain
+%               'a' or 'altitude sea' height is in m over sea level
 
 alt_at_w=(p.ph+p.phb)/9.81; % geopotential altitude at w-points
-for k=1:size(alt_at_w,3)    % convert into height above the terrain
-    hgt_at_w(:,:,k,:)=alt_at_w(:,:,k,:)-alt_at_w(:,:,1,:);
+switch d
+    case {'h','height', 'height terrain','terrain'}
+        fprintf('Height %im above the terrain\n',h)
+        for k=1:size(alt_at_w,3)    % convert into height above the terrain
+            hgt_at_w(:,:,k,:)=alt_at_w(:,:,k,:)-alt_at_w(:,:,1,:);
+        end
+    case {'s','a','altitude','sea'}
+        fprintf('Altitude %im above the sea level\n',h)
+        hgt_at_w = alt_at_w;
+    otherwise
+        error(fprintf('interpw2height: invalid arg 3'))
 end
 if strcmp(var,'w')
     hgt=hgt_at_w;
@@ -19,18 +34,20 @@ var=p.(var);
 for it=1:t
     for in=1:n
         for im=1:m
-            %x=squeeze(hgt_at_w(im,in,:,it));
-            %y=squeeze(p.w(im,in,:,it));
-            for k=2:kk
-                x1=hgt(im,in,k,it);
-                if h>x1
-                else
-                    y1=var(im,in,k,it);
-                    y0=var(im,in,k-1,it);
-                    x0=hgt(im,in,k-1,it);
-                    var_at_h(im,in,it)=(y0*(x1-h)+y1*(h-x0))/(x1-x0);
-                    break
+            if h>hgt(im,in,1,it)
+                for k=2:kk
+                    x1=hgt(im,in,k,it);
+                    if h>x1
+                    else
+                        y1=var(im,in,k,it);
+                        y0=var(im,in,k-1,it);
+                        x0=hgt(im,in,k-1,it);
+                        var_at_h(im,in,it)=(y0*(x1-h)+y1*(h-x0))/(x1-x0);
+                        break
+                    end
                 end
+            else
+                var_at_h(im,in,it)=NaN;
             end
         end
     end
