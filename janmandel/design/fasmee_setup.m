@@ -132,40 +132,31 @@ else
 end % extract
 
 if analysis,
-        for k=1:r
-            for i=1:N
-                fprintf('vertical interpolation replicant %i run %i\n',k,i)
-                out.p(i,k).w10=interpw2height(out.p(i,k),'w',10,'terrain');
-                out.p(i,k).w20=interpw2height(out.p(i,k),'w',20,'terrain');
-                out.p(i,k).w2500a=interpw2height(out.p(i,k),'w',2500,'sea');
-                out.p(i,k).w3000a=interpw2height(out.p(i,k),'w',3000,'sea');
-                out.p(i,k).w3500a=interpw2height(out.p(i,k),'w',3500,'sea');
-                out.p(i,k).w4000a=interpw2height(out.p(i,k),'w',4000,'sea');
-                out.p(i,k).w5000a=interpw2height(out.p(i,k),'w',5000,'sea');
-                out.p(i,k).smoke10=interpw2height(out.p(i,k),'tr17_1',10,'terrain');
-                out.p(i,k).smoke20=interpw2height(out.p(i,k),'tr17_1',20,'terrain');
-                out.p(i,k).smoke2500a=interpw2height(out.p(i,k),'tr17_1',2500,'sea');
-                out.p(i,k).smoke3000a=interpw2height(out.p(i,k),'tr17_1',3000,'sea');
-                out.p(i,k).smoke3500a=interpw2height(out.p(i,k),'tr17_1',3500,'sea');
-                out.p(i,k).smoke4000a=interpw2height(out.p(i,k),'tr17_1',4000,'sea');
-                out.p(i,k).smoke5000a=interpw2height(out.p(i,k),'tr17_1',5000,'sea');
-            end
-        end
         out.fgrnhfx=effectnd(X,out.p,'fgrnhfx');
-        out.w10=effectnd(X,out.p,'w10');
-        out.w20=effectnd(X,out.p,'w20');
-        out.w2500a=effectnd(X,out.p,'w2500a');
-        out.w3000a=effectnd(X,out.p,'w3000a');
-        out.w3500a=effectnd(X,out.p,'w3500a');
-        out.w4000a=effectnd(X,out.p,'w4000a');
-        out.w5000a=effectnd(X,out.p,'w5000a');
-        out.smoke10=effectnd(X,out.p,'smoke10');
-        out.smoke20=effectnd(X,out.p,'smoke20');
-        out.smoke2500a=effectnd(X,out.p,'smoke2500a');
-        out.smoke3000a=effectnd(X,out.p,'smoke3000a');
-        out.smoke3500a=effectnd(X,out.p,'smoke3500a');
-        out.smoke4000a=effectnd(X,out.p,'smoke4000a');
-        out.smoke5000a=effectnd(X,out.p,'smoke5000a');
+        for h=[5,10,20,30]  % height above the terrain
+            w=['w',num2str(h)];
+            s=['smoke',num2str(h)];
+            for k=1:r
+                for i=1:N
+                    out.p(i,k).(w)=interpw2height(out.p(i,k),'w',h,'terrain');
+                    out.p(i,k).(s)=interpw2height(out.p(i,k),'tr17_1',h,'terrain');
+                end
+            end
+            out.(w)=effectnd(X,out.p,w);
+            out.(s)=effectnd(X,out.p,s);
+        end
+        for h=[2000:500:5000];   % altitude above the sea level
+            w=['w',num2str(h),'a'];
+            s=['smoke',num2str(h),'a'];
+            for k=1:r
+                for i=1:N
+                    out.p(i,k).(w)=interpw2height(out.p(i,k),'w',h,'sea');
+                    out.p(i,k).(s)=interpw2height(out.p(i,k),'tr17_1',h,'sea');
+                end
+            end
+            out.(w)=effectnd(X,out.p,w);
+            out.(s)=effectnd(X,out.p,s);
+        end
 end % analysis
 
 end  % function fasmee_setup

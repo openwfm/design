@@ -80,10 +80,10 @@ for l=1:r
     fprintf('\n')
 end
 if nargout>=2
-    ymean=mean(mean(Y,3),2); % mean over indexes 2 and 2
+    % ymean2=mean(mean(Y,3),2); % mean over indexes 2 and 2
     y2 = reshape(Y,[dim,N*r]);
-    ymean2=mean(y2,2);
-    err_ymean=big(ymean-ymean2)
+    ymean=mean(y2,2);
+    % err_ymean=big(ymean-ymean2)
     varargout(1)={ymean};
     if nargout>=3
         yvar=var(y2,0,2);

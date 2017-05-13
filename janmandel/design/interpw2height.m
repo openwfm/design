@@ -7,6 +7,7 @@ function var_at_h=interpw2height(p,var,h,d)
 %   d   string: 'h' or 'height terrain' height is in m above the terrain
 %               'a' or 'altitude sea' height is in m over sea level
 
+print=0;
 alt_at_w=(p.ph+p.phb)/9.81; % geopotential altitude at w-points
 switch d
     case {'h','height', 'height terrain','terrain'}
@@ -23,17 +24,17 @@ switch d
 end
 if strcmp(var,'w')
     hgt=hgt_at_w;
-    fprintf('Interpolating staggered variable %s to height %im above the %s\n',var,h,above)
+    % fprintf('Interpolating staggered variable %s to height %im above the %s\n',var,h,above)
 else  % assuming given in center
     hgt=0.5*(hgt_at_w(:,:,2:end,:)+hgt_at_w(:,:,1:end-1,:));
-    fprintf('interpolating centered variable %s to height %im above the %s\n',var,h,above)
+    if print, fprintf('interpolating centered variable %s to height %im above the %s\n',var,h,above), end
 end
 [m,n,k,t]=size(p.w);
 var_at_h=zeros(m,n,t);
 kk=size(hgt,3);
 v=p.(var);
 if regexp(var,'tr17_?')  % tracers cannot be negative; numerical instability
-    fprintf('cutting off negative values for %s\n',var)
+    if print, fprintf('cutting off negative values for %s\n',var), end
     v=max(v,0);
 end
 for it=1:t
