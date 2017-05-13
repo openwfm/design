@@ -26,7 +26,7 @@ for k=1:r   %rep
         Y(1,i,k) = model(X(:,i,k));
     end
 end
-V = effect(X,Y)
+[V,mean_all,var_all,eff] = effect(X,Y)
 % X,Y,V
 V_exact = (a.*std_vec).^2
 rel_err = V./V_exact -1

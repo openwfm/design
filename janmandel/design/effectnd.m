@@ -18,7 +18,8 @@ function v=effectnd(X,p,f)
             ff(:,i,k)=p(i,k).(f)(:);
         end
     end
-    [v.eff,v.mean,v.var]=effect(X,ff);
+    [v.V,v.mean,v.var,v.eff]=effect(X,ff);
+    v.V=reshape(v.V,[size(p(1,1).(f)),L]);
     v.eff=reshape(v.eff,[size(p(1,1).(f)),L]);
     v.mean=reshape(v.mean,size(p(1,1).(f)));
     v.var=reshape(v.var,size(p(1,1).(f)));

@@ -1,7 +1,8 @@
-function [V,varargout]=effect(X,Y)
-% A = effect(X,Y)
+function [varargout]=effect(X,Y)
+% V = effect(X,Y)
 % [V,mean_all] = effect(X,Y)
 % [V,mean_all,var_all] = effect(X,Y)
+% [V,mean_all,var_all,eff] = effect(X,Y)
 %
 % Evaluating effect of parameters from repeated Latin Hypercube Sampling
 %
@@ -73,21 +74,17 @@ for l=1:r
     % ymean = mean(cmean,3);
     % variance due to input j
     % V = mean((cmean-ymean*ones(1,N)).^2,2);
-    fprintf('%3i repeats',l)
+    y2 = reshape(Y(:,:,1:l),[dim,N*l]);
+    yvar=var(y2,0,2);
+    eff=V ./ (yvar * ones(1,L));     
+    fprintf('%3i repeats ',l)
+    fprintf('var at points %g max %g avg',max(yvar),mean(yvar))
     for i=1:L
-        fprintf(' param %3i max %g avg %g',i,max(V(:,i)),mean(V(:,i)))
+        fprintf(' param %3i: max %g avg %g',i,max(eff(:,i)),mean(eff(:,i)))
     end
     fprintf('\n')
 end
-if nargout>=2
-    % ymean2=mean(mean(Y,3),2); % mean over indexes 2 and 2
-    y2 = reshape(Y,[dim,N*r]);
-    ymean=mean(y2,2);
-    % err_ymean=big(ymean-ymean2)
-    varargout(1)={ymean};
-    if nargout>=3
-        yvar=var(y2,0,2);
-        varargout(2)={yvar};
-    end
-end
+ymean=mean(y2,2);
+out={V,ymean,yvar,eff};
+varargout=out(1:nargout);
 end
