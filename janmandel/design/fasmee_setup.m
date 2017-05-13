@@ -139,12 +139,14 @@ if analysis,
                 out.p(i,k).w20=interpw2height(out.p(i,k),'w',20,'terrain');
                 out.p(i,k).w2500a=interpw2height(out.p(i,k),'w',2500,'sea');
                 out.p(i,k).w3000a=interpw2height(out.p(i,k),'w',3000,'sea');
+                out.p(i,k).w3500a=interpw2height(out.p(i,k),'w',3500,'sea');
                 out.p(i,k).w4000a=interpw2height(out.p(i,k),'w',4000,'sea');
                 out.p(i,k).w5000a=interpw2height(out.p(i,k),'w',5000,'sea');
                 out.p(i,k).smoke10=interpw2height(out.p(i,k),'tr17_1',10,'terrain');
                 out.p(i,k).smoke20=interpw2height(out.p(i,k),'tr17_1',20,'terrain');
                 out.p(i,k).smoke2500a=interpw2height(out.p(i,k),'tr17_1',2500,'sea');
                 out.p(i,k).smoke3000a=interpw2height(out.p(i,k),'tr17_1',3000,'sea');
+                out.p(i,k).smoke3500a=interpw2height(out.p(i,k),'tr17_1',3500,'sea');
                 out.p(i,k).smoke4000a=interpw2height(out.p(i,k),'tr17_1',4000,'sea');
                 out.p(i,k).smoke5000a=interpw2height(out.p(i,k),'tr17_1',5000,'sea');
             end
@@ -152,10 +154,16 @@ if analysis,
         out.fgrnhfx=effectnd(X,out.p,'fgrnhfx');
         out.w10=effectnd(X,out.p,'w10');
         out.w20=effectnd(X,out.p,'w20');
+        out.w2500a=effectnd(X,out.p,'w2500a');
+        out.w3000a=effectnd(X,out.p,'w3000a');
+        out.w3500a=effectnd(X,out.p,'w3500a');
+        out.w4000a=effectnd(X,out.p,'w4000a');
+        out.w5000a=effectnd(X,out.p,'w5000a');
         out.smoke10=effectnd(X,out.p,'smoke10');
         out.smoke20=effectnd(X,out.p,'smoke20');
         out.smoke2500a=effectnd(X,out.p,'smoke2500a');
         out.smoke3000a=effectnd(X,out.p,'smoke3000a');
+        out.smoke3500a=effectnd(X,out.p,'smoke3500a');
         out.smoke4000a=effectnd(X,out.p,'smoke4000a');
         out.smoke5000a=effectnd(X,out.p,'smoke5000a');
 end % analysis

@@ -86,7 +86,7 @@ if nargout>=2
     err_ymean=big(ymean-ymean2)
     varargout(1)={ymean};
     if nargout>=3
-        yvar=var(y2,2);
+        yvar=var(y2,0,2);
         varargout(2)={yvar};
     end
 end

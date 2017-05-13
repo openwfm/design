@@ -31,7 +31,11 @@ end
 [m,n,k,t]=size(p.w);
 var_at_h=zeros(m,n,t);
 kk=size(hgt,3);
-var=p.(var);
+v=p.(var);
+if regexp(var,'tr17_?')  % tracers cannot be negative; numerical instability
+    fprintf('cutting off negative values for %s\n',var)
+    v=max(v,0);
+end
 for it=1:t
     for in=1:n
         for im=1:m
@@ -40,8 +44,8 @@ for it=1:t
                     x1=hgt(im,in,k,it);
                     if h>x1
                     else
-                        y1=var(im,in,k,it);
-                        y0=var(im,in,k-1,it);
+                        y1=v(im,in,k,it);
+                        y0=v(im,in,k-1,it);
                         x0=hgt(im,in,k-1,it);
                         var_at_h(im,in,it)=(y0*(x1-h)+y1*(h-x0))/(x1-x0);
                         break
