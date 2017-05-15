@@ -34,10 +34,10 @@ end
 if clone
 
 [D,logm,logs]=equal_logn(...
-              [0.05 0.14         % 10 h moisture
+              [0.04 0.14         % 10 h moisture
                6,     50         % heat ext depth         fire_ext_grnd
                0.5    2],...  % heat flux multiplier  fire_atm_feedback
-               0.1,...           % probability value outside given interval
+               0.1,...           % probabreility value outside given interval
                N)                % sample points
 
 %0P =[1;1;5]
