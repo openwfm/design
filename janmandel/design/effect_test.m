@@ -4,7 +4,7 @@ function err=effect_test(L,N,r)
 % N = number of bins
 % r = number of repetitions
 % example:
-% effect_test(2,100,20000)
+% effect_test(2,100,1000)
 
 % generate model: y = a*x
 a = 1:L;
