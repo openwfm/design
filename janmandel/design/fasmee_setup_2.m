@@ -1,48 +1,43 @@
 function out=fasmee_setup(out)
+format compact
 root_dir='/glade/u/home/jmandel/scratch/WRF341F_jm2_devel/wrffire/wrfv2_fire/test'
 template_dir=[root_dir,'/Fishlake_template']
 wksp_dir = '/glade/u/home/jmandel/Projects/wrfxpy/wksp'
 
-generate=0
-clone=1
+generate=1
+clone=0
 extract=0
-analysis=1
+analysis=0
 
+if generate,
 
-if generate == 1
-    N = 5;
-    P=rLHS(D,1)
-
-    save rep1 P D N
-
-else
-
-    load rep1
-    
-end
-
-if generate==2,
-    for k=2:r
-        P(:,:,k)=rLHS(D,1);
-    end
-    save rep2 P D N
-else
-    load rep2
-end
-
-
-if clone
+rmax=100
+N=5
 
 [D,logm,logs]=equal_logn(...
               [0.04 0.14         % 10 h moisture
                6,     50         % heat ext depth         fire_ext_grnd
-               0.5    2],...  % heat flux multiplier  fire_atm_feedback
-               0.1,...           % probabreility value outside given interval
-               N)                % sample points
+               0.5    2          % heat flux multiplier  fire_atm_feedback
+               0.5    2          % ros wind adj
+               0.5    2          % ros slope ajd
+               0.5    2          % ros all dir
+               ],0.1,...         % probabreility value outside given interval
+               N) ;              % sample points
 
-%0P =[1;1;5]
+D = [D; 1:N]  % add line for the choice of days
 
-r=5
+    for k=2:rmax
+        P(:,:,k)=rLHS(D,1);
+    end
+    save rep2_2 P D N
+else
+    load rep2_2
+end
+
+if clone
+
+r=1
+
 P=P(:,:,1:r)
 
 [L,N,r]=size(P);
@@ -124,14 +119,13 @@ if extract
         out.D=D;
     % end
     save -v7.3 out out
-else
+end % extract
+
+if analysis,
     if ~exist('out','var')
         disp('variable out not given, loading from file')
         load out
     end
-end % extract
-
-if analysis,
         out.fgrnhfx=effectnd(X,out.p,'fgrnhfx');
         for h=[5,10,20,30]  % height above the terrain
             w=['w',num2str(h)];
