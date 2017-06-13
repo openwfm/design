@@ -5,28 +5,36 @@ template_dir=[root_dir,'/Fishlake_template']
 wksp_dir = '/glade/u/home/jmandel/Projects/wrfxpy/wksp'
 
 generate=1
-clone=0
+clone=1
 extract=0
 analysis=0
 
-if generate,
-
+r=1
 rmax=100
 N=5
+case_names={
+'Fishlake_5d_09032014',
+'Fishlake_5d_09112016',
+'Fishlake_5d_09222012',
+'Fishlake_5d_09262015',
+'Fishlake_5d_09272015',
+}
+
+if generate,
 
 [D,logm,logs]=equal_logn(...
               [0.04 0.14         % 10 h moisture
                6,     50         % heat ext depth         fire_ext_grnd
                0.5    2          % heat flux multiplier  fire_atm_feedback
-               0.5    2          % ros wind adj
-               0.5    2          % ros slope ajd
-               0.5    2          % ros all dir
+               0.5    2          % adjr0
+               0.5    2          % ajdw
+               0.5    2          % adjs
                ],0.1,...         % probabreility value outside given interval
                N) ;              % sample points
 
-D = [D; 1:N]  % add line for the choice of days
+D = [D; 1:N]  % add line for the choice of days - case
 
-    for k=2:rmax
+    for k=1:rmax
         P(:,:,k)=rLHS(D,1);
     end
     save rep2_2 P D N
@@ -36,7 +44,6 @@ end
 
 if clone
 
-r=1
 
 P=P(:,:,1:r)
 
@@ -53,8 +60,13 @@ for k=1:r
     fmc_gc_10h = X(1,i,k);
     fire_ext_grnd = X(2,i,k);
     fire_atm_feedback=X(3,i,k);
-    description = sprintf('%s fmc_gc_10h=%g fire_ext_grnd=%g fire_atm_feedback=%g',...
-        job_id,fmc_gc_10h,fire_ext_grnd,fire_atm_feedback);
+    adjr0 = X(4,i,k)
+    adjw = X(5,i,k)
+    adjs = X(6,i,k)
+    case_num = X(7,i,k)
+    case_name = case_names{case_num}
+    if case_num ~= P(7,i,k), error('bad case_num'),end
+    description = job_id;
     disp(description)
 
     if clone > 1
@@ -153,11 +165,10 @@ if analysis,
         end
 end % analysis
 
-end  % function fasmee_setup
 
 function job_id = get_job_id(P,i,k)
     case_id=sprintf('%03i_%s',k,num2str(P(:,i,k))');
-    job_id = ['LHS3_Fishlake_',case_id];
+    job_id = sprintf('LHS4_%s_%s',case_names{P(7,i,k)},case_id);
 end
 
 function X = get_params_vec(P,D)
@@ -169,3 +180,4 @@ function X = get_params_vec(P,D)
         end
     end
 end 
+end  % function fasmee_setup
