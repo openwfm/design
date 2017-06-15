@@ -1,6 +1,6 @@
 #!/bin/tcsh
 ### Job Name
-#PBS -N FSHL_091116
+#PBS -N __job_id__
 ### Project code
 #PBS -A UCUD0002 
 #PBS -l walltime=12:00:00

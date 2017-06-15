@@ -1,11 +1,13 @@
 function out=fasmee_setup(out)
 format compact
-root_dir='/glade/u/home/jmandel/scratch/WRF341F_jm2_devel/wrffire/wrfv2_fire/test'
-template_dir=[root_dir,'/Fishlake_template']
+root_dir='/glade2/scratch2/jmandel/wrf-fire_cheyenne/wrfv2_fire/test'
+case_dir='/glade2/scratch2/jmandel/wrf-fire_cheyenne/wrfv2_fire/test'
+template_dir = '/glade/p/work/jmandel/fasmee.git/janmandel/design/templates'
 wksp_dir = '/glade/u/home/jmandel/Projects/wrfxpy/wksp'
+template='_Fishlake_5d';
 
-generate=1
-clone=1
+generate=0
+clone=2
 extract=0
 analysis=0
 
@@ -76,21 +78,28 @@ for k=1:r
     shell(['/bin/rm -rf ',job_dir])
     shell(['mkdir ',job_dir])
     shell(['/bin/rm -rf ',wrf_dir])
-    shell(['cp -a ',template_dir,' ',wrf_dir])
+    from_dir=[case_dir,'/',case_name]
+    shell(['cp -a ',from_dir,' ',wrf_dir])
     shell(['ln -s ',wrf_dir,' ',job_dir,'/wrf '])
 
-    nml = fileread([wrf_dir,'/namelist.input.template']);
-    nml = strrep(nml,'_fire_ext_grnd_',num2str(fire_ext_grnd));
-    nml = strrep(nml,'_fire_atm_feedback_',num2str(fire_atm_feedback));
+    nml = fileread([template_dir,'/namelist.input_',case_name]);
+    nml = strrep(nml,'__fire_ext_grnd__',num2str(fire_ext_grnd));
+    nml = strrep(nml,'__fire_atm_feedback__',num2str(fire_atm_feedback));
     filewrite([wrf_dir,'/namelist.input'],nml)
     
-    lsf = fileread([wrf_dir,'/runwrf1.lsf.template']);
-    lsf = strrep(lsf,'_job_id_',job_id);
-    filewrite([wrf_dir,'/runwrf1.lsf'],lsf)
+    nml = fileread([template_dir,'/namelist.fire',template]);
+    nml = strrep(nml,'__adjr0__',num2str(adjr0));
+    nml = strrep(nml,'__adjw__',num2str(adjw));
+    nml = strrep(nml,'__adjs__',num2str(adjs));
+    filewrite([wrf_dir,'/namelist.fire'],nml)
     
-    job = fileread([wrf_dir,'/job.json.template']);
-    job = strrep(job,'_description_',description);
-    job = strrep(job,'_job_id_',job_id);
+    lsf = fileread([template_dir,'/runwrf_cheyenne.pbs',template]);
+    lsf = strrep(lsf,'__job_id__',job_id);
+    filewrite([wrf_dir,'/runwrf_cheyenne.pbs'],lsf)
+    
+    job = fileread([template_dir,'/job.json',template]);
+    job = strrep(job,'__description__',description);
+    job = strrep(job,'__job_id__',job_id);
     filewrite([job_dir,'/job.json'],job)
     
     wrf_f = [wrf_dir,'/wrfinput_d05'];

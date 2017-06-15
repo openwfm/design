@@ -162,6 +162,8 @@
     fire_ignition_start_time5 = 0, 0
     fire_ignition_end_time5 = 0, 0
     fire_viscosity = 0, 0, 0, 0, 0
+    fire_ext_grnd = 5*__fire_ext_grnd__
+    fire_atm_feedback=5*__fire_atm_feedback__
 /
 
 &bdy_control

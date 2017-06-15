@@ -1,17 +1,16 @@
 {
     "process_create_time": null,
-    "wrf_dir": "/glade/p/work/jmandel/wrfxpy/wksp/Fishlake_5d_09222012.plume_height/wrf",
-    "job_id": "Fishlake_5d_09222012.plume_height",
-    "jobfile": "/glade/p/work/jmandel/wrfxpy/wksp/Fishlake_5d_09222012.plume_height/job.json",
+    "wrf_dir": "/glade/p/work/jmandel/wrfxpy/wksp/__job_id__/wrf",
+    "job_id": "__job_id__",
+    "jobfile": "/glade/p/work/jmandel/wrfxpy/wksp/__job_id__/job.json",
     "postproc": {
         "from": "wrfout",
-        "description": "Fishlake_5d_09222012.plume_height",
+        "description": "__description__",
         "1": [
             "T2",
             "PSFC",
             "WINDSPD",
             "WINDVEC",
-            "PLUME_CENTER",
             "PLUME_HEIGHT",
             "SMOKE_INT"
         ],
@@ -20,7 +19,6 @@
             "PSFC",
             "WINDSPD",
             "WINDVEC",
-            "PLUME_CENTER",
             "PLUME_HEIGHT",
             "SMOKE_INT"
         ],
@@ -40,7 +38,6 @@
             "FIRE_AREA",
             "FGRNHFX",
             "FLINEINT",
-            "PLUME_CENTER",
             "PLUME_HEIGHT",
             "SMOKE_INT"
         ],
@@ -49,19 +46,18 @@
             "PSFC",
             "WINDSPD",
             "WINDVEC",
-            "PLUME_CENTER",
             "PLUME_HEIGHT",
             "SMOKE_INT"
         ],
         "shuttle": "incremental"
     },
     "job_num": null,
-    "pid": 15678,
+    "pid": null,
     "old_job_num": null,
     "grid_code": "Fishlake_5d_FSHU1",
     "state": "Processing",
-    "pp_dir": "/glade/p/work/jmandel/wrfxpy/wksp/Fishlake_5d_09222012.plume_height/products",
-    "manifest_filename": "wfc-Fishlake_5d_FSHU1.json",
+    "pp_dir": "/glade/p/work/jmandel/wrfxpy/wksp/__job_id__/products",
+    "manifest_filename": "manifest.json",
     "qsys": "none",
-    "old_pid": 26000
+    "old_pid": null
 }
