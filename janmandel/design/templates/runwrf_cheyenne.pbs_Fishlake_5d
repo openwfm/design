@@ -12,7 +12,10 @@
 ### Send email on abort, begin and end
 #PBS -m abe
 ### Specify mail recipient
-#PBS -M adam.kochanski@utah.edu 
+#PBS -M  jan.mandel@gmail.com
+unlimit coredumpsize
+limit
+printenv
 
 ### Run the executable
 mpiexec_mpt dplace -s 1 ./wrf.exe
