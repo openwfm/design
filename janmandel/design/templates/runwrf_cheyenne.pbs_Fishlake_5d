@@ -1,0 +1,18 @@
+#!/bin/tcsh
+### Job Name
+#PBS -N FSHL_091116
+### Project code
+#PBS -A UCUD0002 
+#PBS -l walltime=12:00:00
+#PBS -q regular
+### Merge output and error files
+#PBS -j oe
+### Select 2 nodes with 36 CPUs each for a total of 72 MPI processes
+#PBS -l select=10:ncpus=36:mpiprocs=36
+### Send email on abort, begin and end
+#PBS -m abe
+### Specify mail recipient
+#PBS -M adam.kochanski@utah.edu 
+
+### Run the executable
+mpiexec_mpt dplace -s 1 ./wrf.exe
