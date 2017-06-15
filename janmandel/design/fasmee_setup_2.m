@@ -63,8 +63,8 @@ for k=1:r
     fire_ext_grnd = X(2,i,k);
     fire_atm_feedback=X(3,i,k);
     adjr0 = X(4,i,k)
-    adjw = X(5,i,k)
-    adjs = X(6,i,k)
+    adjrw = X(5,i,k)
+    adjrs = X(6,i,k)
     case_num = X(7,i,k)
     case_name = case_names{case_num}
     if case_num ~= P(7,i,k), error('bad case_num'),end
@@ -89,8 +89,8 @@ for k=1:r
     
     nml = fileread([template_dir,'/namelist.fire',template]);
     nml = strrep(nml,'__adjr0__',num2str(adjr0));
-    nml = strrep(nml,'__adjw__',num2str(adjw));
-    nml = strrep(nml,'__adjs__',num2str(adjs));
+    nml = strrep(nml,'__adjrw__',num2str(adjrw));
+    nml = strrep(nml,'__adjrs__',num2str(adjrs));
     filewrite([wrf_dir,'/namelist.fire'],nml)
     
     lsf = fileread([template_dir,'/runwrf_cheyenne.pbs',template]);
