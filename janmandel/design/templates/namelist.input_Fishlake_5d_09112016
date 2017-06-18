@@ -5,9 +5,9 @@
     run_seconds = 0
     start_year = 2016, 2016, 2016, 2016, 2016
     start_month = 9, 9, 9, 9, 9
-    start_day = 12, 12, 12, 12, 12
+    start_day = 11, 11, 11, 11, 11
     start_hour = 16, 16, 16, 16, 16
-    start_minute = 0, 0, 0, 0, 0
+    start_minute = 30, 30, 30, 30, 30
     start_second = 0, 0, 0, 0, 0
     end_year = 2016, 2016, 2016, 2016, 2016
     end_month = 9, 9, 9, 9, 9

@@ -7,7 +7,7 @@
     start_month = 9, 9, 9, 9, 9
     start_day = 3, 3, 3, 3, 3
     start_hour = 16, 16, 16, 16, 16
-    start_minute = 0, 0, 0, 0, 0
+    start_minute = 30, 30, 30, 30, 30
     start_second = 0, 0, 0, 0, 0
     end_year = 2014, 2014, 2014, 2014, 2014
     end_month = 9, 9, 9, 9, 9

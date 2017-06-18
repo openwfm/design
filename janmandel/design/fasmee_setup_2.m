@@ -7,12 +7,15 @@ wksp_dir = '/glade/u/home/jmandel/Projects/wrfxpy/wksp'
 template='_Fishlake_5d';
 
 generate=0
-clone=2
+clone=3
+fake=0
 extract=0
 analysis=0
 
-r=1
-rmax=100
+r_end=10
+r_start=1
+r_max=100
+
 N=5
 case_names={
 'Fishlake_5d_09032014',
@@ -36,7 +39,7 @@ if generate,
 
 D = [D; 1:N]  % add line for the choice of days - case
 
-    for k=1:rmax
+    for k=1:r_max
         P(:,:,k)=rLHS(D,1);
     end
     save rep2_2 P D N
@@ -47,13 +50,11 @@ end
 if clone
 
 
-P=P(:,:,1:r)
-
-[L,N,r]=size(P);
+[L,N,r_max]=size(P);
 
 X = get_params_vec(P,D);
 
-for k=1:r
+for k=r_start:r_end
     
     for i = 1:N,
 
@@ -75,13 +76,14 @@ for k=1:r
     job_dir = [wksp_dir,'/',job_id]
     wrf_dir = [root_dir,'/',job_id]  % where wrf will run
 
-    shell(['/bin/rm -rf ',job_dir])
-    shell(['mkdir ',job_dir])
-    shell(['/bin/rm -rf ',wrf_dir])
+    shell(['/bin/rm -rf ',job_dir],fake)
+    shell(['mkdir ',job_dir],fake)
+    shell(['/bin/rm -rf ',wrf_dir],fake)
     from_dir=[case_dir,'/',case_name]
-    shell(['cp -a ',from_dir,' ',wrf_dir])
-    shell(['ln -s ',wrf_dir,' ',job_dir,'/wrf '])
+    shell(['cp -a ',from_dir,' ',wrf_dir],fake)
+    shell(['ln -s ',wrf_dir,' ',job_dir,'/wrf '],fake)
 
+    if clone > 2
     nml = fileread([template_dir,'/namelist.input_',case_name]);
     nml = strrep(nml,'__fire_ext_grnd__',num2str(fire_ext_grnd));
     nml = strrep(nml,'__fire_atm_feedback__',num2str(fire_atm_feedback));
@@ -110,9 +112,10 @@ for k=1:r
     fmc_gc(:,:,4)=0.05;
     fmc_gc(:,:,5)=0.78;
     ncreplace(wrf_f,'FMC_GC',fmc_gc);
-    end
+    end % clone > 2
+    end % clone > 1
     
-end  % for i
+end  % i
 end  % for k
 end  % clone
 
@@ -121,7 +124,7 @@ if extract
     wrfout = 'wrfout_d05_2014-09-03_16:30:01'
     X=get_params_vec(P,D);
     % for ts=1
-        for k=1:r
+        for k=1:r_end
             for i=1:N
                 job_id = get_job_id(P,i,k);
                 fprintf('replicant %03i vector %i job_id %s\n',k,i,job_id)
@@ -151,7 +154,7 @@ if analysis,
         for h=[5,10,20,30]  % height above the terrain
             w=['w',num2str(h)];
             s=['smoke',num2str(h)];
-            for k=1:r
+            for k=1:r_end
                 for i=1:N
                     out.p(i,k).(w)=interpw2height(out.p(i,k),'w',h,'terrain');
                     out.p(i,k).(s)=interpw2height(out.p(i,k),'tr17_1',h,'terrain');
@@ -163,7 +166,7 @@ if analysis,
         for h=[2000:500:5000];   % altitude above the sea level
             w=['w',num2str(h),'a'];
             s=['smoke',num2str(h),'a'];
-            for k=1:r
+            for k=1:r_end
                 for i=1:N
                     out.p(i,k).(w)=interpw2height(out.p(i,k),'w',h,'sea');
                     out.p(i,k).(s)=interpw2height(out.p(i,k),'tr17_1',h,'sea');

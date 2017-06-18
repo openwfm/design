@@ -4,7 +4,8 @@ template_dir=[root_dir,'/Fishlake_template']
 wksp_dir = '/glade/u/home/jmandel/Projects/wrfxpy/wksp'
 
 generate=0
-clone=1
+clone=2
+fake=1
 extract=0
 analysis=1
 
@@ -66,11 +67,11 @@ for k=1:r
     job_dir = [wksp_dir,'/',job_id]
     wrf_dir = [root_dir,'/',job_id]  % where wrf will run
 
-    shell(['/bin/rm -rf ',job_dir])
-    shell(['mkdir ',job_dir])
-    shell(['/bin/rm -rf ',wrf_dir])
-    shell(['cp -a ',template_dir,' ',wrf_dir])
-    shell(['ln -s ',wrf_dir,' ',job_dir,'/wrf '])
+    shell(['/bin/rm -rf ',job_dir],fake)
+    shell(['mkdir ',job_dir],fake)
+    shell(['/bin/rm -rf ',wrf_dir],fake)
+    shell(['cp -a ',template_dir,' ',wrf_dir],fake)
+    shell(['ln -s ',wrf_dir,' ',job_dir,'/wrf '],fake)
 
     nml = fileread([wrf_dir,'/namelist.input.template']);
     nml = strrep(nml,'_fire_ext_grnd_',num2str(fire_ext_grnd));
