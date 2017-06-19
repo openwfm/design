@@ -12,8 +12,8 @@ fake=0
 extract=0
 analysis=0
 
-r_end=10
-r_start=1
+r_end=30
+r_start=18
 r_max=100
 
 N=5
