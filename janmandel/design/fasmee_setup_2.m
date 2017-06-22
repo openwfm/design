@@ -7,14 +7,16 @@ wksp_dir = '/glade/u/home/jmandel/Projects/wrfxpy/wksp'
 template='_Fishlake_5d';
 
 generate=0
-clone=3
+clone=0
+submit=1
 fake=0
-extract=0
+extract=1
 analysis=0
 
-r_end=100
-r_start=51
-r_max=100
+r_start=131
+r_end=150
+r_max=1000
+r_ext=50 
 
 N=5
 case_names={
@@ -25,11 +27,18 @@ case_names={
 'Fishlake_5d_09272015'
 }
 case_restart={
-'09-03_16:30:00',
-'09-11_16:30:00',
-'09-22_16:30:00',
-'09-26_16:30:00',
-'09-27_16:30:00'
+'2014-09-03_16:30:00',
+'2016-09-11_16:30:00',
+'2012-09-22_16:30:00',
+'2015-09-26_16:30:00',
+'2015-09-27_16:30:00'
+}
+case_output={
+'2014-09-03_16:30:01',
+'2016-09-11_16:30:01',
+'2012-09-22_16:30:01',
+'2015-09-26_16:30:01',
+'2015-09-27_16:30:01'
 }
 
 if generate,
@@ -54,12 +63,10 @@ else
     load rep2_2
 end
 
-if clone
-
-
 [L,N,r_max]=size(P);
-
 X = get_params_vec(P,D);
+
+if clone
 
 for k=r_start:r_end
     
@@ -136,6 +143,10 @@ for k=r_start:r_end
     fmc_gc(:,:,4)=0.05;
     fmc_gc(:,:,5)=0.78;
     ncreplace(wrf_f,'FMC_GC',fmc_gc);
+
+    if submit,
+        shell(['cd ',wrf_dir,'; qsub -q economy runwrf_cheyenne.pbs'])
+    end
     end % clone > 2
     end % clone > 1
     
@@ -145,17 +156,23 @@ end  % clone
 
 
 if extract
-    wrfout = 'wrfout_d05_2014-09-03_16:30:01'
     X=get_params_vec(P,D);
     % for ts=1
-        for k=1:r_end
+        for k=1:r_ext
             for i=1:N
                 job_id = get_job_id(P,i,k);
-                fprintf('replicant %03i vector %i job_id %s\n',k,i,job_id)
+                case_num = X(7,i,k)
+                fprintf('replicant %03i vector %i job_id %s case %s\n',k,i,job_id,...
+                     case_names{case_num})
                 job_id = get_job_id(P,i,k)
-                f = [wksp_dir,'/',job_id,'/wrf/',wrfout];  % where wrf will run
+                wrfout = ['wrfout_d05_',case_restart{case_num}]
+                f = [wksp_dir,'/',job_id,'/wrf/',wrfout];  
+                if ~exist(f,'file')
+                    wrfout = ['wrfout_d05_',case_output{case_num}]
+                    f = [wksp_dir,'/',job_id,'/wrf/',wrfout];  
+                end
                 p=nc2struct(f,{'FGRNHFX','W','PH','PHB','tr17_1'},{})
-                p.job_id=job.id;
+                p.job_id=job_id;
                 if k==1 & i==1,
                     out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1)
                 end
