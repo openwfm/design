@@ -12,8 +12,8 @@ fake=0
 extract=0
 analysis=0
 
-r_end=30
-r_start=18
+r_end=100
+r_start=51
 r_max=100
 
 N=5
@@ -22,7 +22,14 @@ case_names={
 'Fishlake_5d_09112016',
 'Fishlake_5d_09222012',
 'Fishlake_5d_09262015',
-'Fishlake_5d_09272015',
+'Fishlake_5d_09272015'
+}
+case_restart={
+'09-03_16:30:00',
+'09-11_16:30:00',
+'09-22_16:30:00',
+'09-26_16:30:00',
+'09-27_16:30:00'
 }
 
 if generate,
@@ -79,11 +86,27 @@ for k=r_start:r_end
     shell(['/bin/rm -rf ',job_dir],fake)
     shell(['mkdir ',job_dir],fake)
     shell(['/bin/rm -rf ',wrf_dir],fake)
-    from_dir=[case_dir,'/',case_name]
-    shell(['cp -a ',from_dir,' ',wrf_dir],fake)
+    shell(['mkdir ',wrf_dir],fake)
     shell(['ln -s ',wrf_dir,' ',job_dir,'/wrf '],fake)
 
-    if clone > 2
+    from_dir=[case_dir,'/',case_name]
+    % shell(['cp -a ',from_dir,' ',wrf_dir],fake)
+    d = dir(from_dir);
+    to_skip = {'.','..','wrfinput_d05','namelist.input','namelist.fire','runwrf_cheyenne.pbs','job.json'}
+    for i={d.name}
+       f=i{1}
+       args = [from_dir,'/',f,' ',wrf_dir,'/',f];
+       switch f
+           case to_skip
+               disp(['skipping ',f])
+           otherwise
+               if isempty(regexp(f,'^wrfrst')) | regexp(f,case_restart{case_num})
+                   shell (['ln -s ',args],fake)
+               end
+       end
+    end
+
+    if clone > 2 & ~ fake
     nml = fileread([template_dir,'/namelist.input_',case_name]);
     nml = strrep(nml,'__fire_ext_grnd__',num2str(fire_ext_grnd));
     nml = strrep(nml,'__fire_atm_feedback__',num2str(fire_atm_feedback));
@@ -104,6 +127,7 @@ for k=r_start:r_end
     job = strrep(job,'__job_id__',job_id);
     filewrite([job_dir,'/job.json'],job)
     
+    shell(['cp -a ',from_dir,'/wrfinput_d05 ',wrf_dir],fake)
     wrf_f = [wrf_dir,'/wrfinput_d05'];
     fmc_gc=ncread(wrf_f,'FMC_GC');
     fmc_gc(:,:,1)=fmc_gc_10h-0.01;
