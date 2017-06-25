@@ -8,16 +8,16 @@ template='_Fishlake_5d';
 
 generate=0 % only the first time
 clone=0    % 3 including everything
-submit=1   % neens clone=3 or extract>0
+submit=0   % neens clone=3 or extract>0
 fake=0     % 1=shell commands do not execute
-extract=1  % 1=only check for file, 2 = all
+extract=2  % 1=only check for file, 2 = all
 timestep=24 % load timestep in the first wrfout file
 analysis=0
 
 r_span=[70]  % span to clone
 r_max=1000      % 
-r_ext_start = 84 
-r_ext_end=200        % extracting r_ext_start:r_ext_end
+r_ext_start = 1 
+r_ext_end=70        % extracting r_ext_start:r_ext_end
 submit_delay=150
 
 N=5
@@ -147,7 +147,7 @@ for k=r_span,
     ncreplace(wrf_f,'FMC_GC',fmc_gc);
 
     if submit,
-        shell(['cd ',wrf_dir,'; qsub -q economy runwrf_cheyenne.pbs'])
+        shell(['cd ',wrf_dir,'; qsub -q economy runwrf_cheyenne.pbs'],fake)
     end
     end % clone > 2
     end % clone > 1
@@ -182,16 +182,16 @@ if extract
                     f = [wrf_dir,wrfout];  
                 end
                 try
+                    if extract > 1 & k==r_ext_start & i==1,
+                        out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1)
+                    end
                     p=nc2struct(f,variables,{},timestep)
                     out.ok(i,k)=1;
                     p.job_id=job_id;
-                    if extract > 1 & k==1 & i==1,
-                        out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1)
-                    end
                     out.p(i,k)=p;
                 catch
                     if submit
-                        shell(['cd ',wrf_dir,'; qsub -q economy runwrf_cheyenne.pbs; sleep ',num2str(submit_delay)]) 
+                        shell(['cd ',wrf_dir,'; qsub -q economy runwrf_cheyenne.pbs; sleep ',num2str(submit_delay)],fake) 
                     end
                 end
             end
