@@ -11,7 +11,8 @@ clone=0    % 3 including everything
 submit=0   % needs clone=3 or extract>0
 fake=1     % 1=shell commands do not execute
 extract=1  % 1=only Times, 2 = all specificed variables
-timestep=24 % load timestep in the first wrfout file
+timestep=48 % load timestep in the first wrfout file
+frames_per_wrfout=24; 
 analysis=0
 
 r_span=[151]  % span to clone
@@ -29,20 +30,23 @@ case_names={
 'Fishlake_5d_09272015'
 }
 case_output0={
-'2014-09-03_16:30:00',
-'2016-09-11_16:30:00',
-'2012-09-22_16:30:00',
-'2015-09-26_16:30:00',
-'2015-09-27_16:30:00'
+'2014-09-03_16:30:00','2014-09-03_18:30:00','2014-09-03_20:30:00','2014-09-03_22:30:00','2014-09-04_00:30:00',
+'2016-09-11_16:30:00','2016-09-11_18:30:00','2016-09-11_20:30:00','2016-09-11_22:30:00','2016-09-12_00:30:00',
+'2012-09-22_16:30:00','2012-09-22_18:30:00','2012-09-22_20:30:00','2012-09-22_22:30:00','2012-09-23_00:30:00',
+'2015-09-26_16:30:00','2015-09-26_18:30:00','2015-09-26_20:30:00','2015-09-26_22:30:00','2015-09-27_00:30:00',
+'2015-09-27_16:30:00','2015-09-27_18:30:00','2015-09-27_20:30:00','2015-09-27_22:30:00','2015-09-28_00:30:00',
 }
 case_output1={
-'2014-09-03_16:30:01',
-'2016-09-11_16:30:01',
-'2012-09-22_16:30:01',
-'2015-09-26_16:30:01',
-'2015-09-27_16:30:01'
+'2014-09-03_16:30:01','2014-09-03_18:30:01','2014-09-03_20:30:01','2014-09-03_22:30:01','2014-09-04_00:30:01',
+'2016-09-11_16:30:01','2016-09-11_18:30:01','2016-09-11_20:30:01','2016-09-11_22:30:01','2016-09-12_00:30:01',
+'2012-09-22_16:30:01','2012-09-22_18:30:01','2012-09-22_20:30:01','2012-09-22_22:30:01','2012-09-23_00:30:01',
+'2015-09-26_16:30:01','2015-09-26_18:30:01','2015-09-26_20:30:01','2015-09-26_22:30:01','2015-09-27_00:30:01',
+'2015-09-27_16:30:01','2015-09-27_18:30:01','2015-09-27_20:30:01','2015-09-27_22:30:01','2015-09-28_00:30:01',
 }
 case_restart=case_output0(:,1);
+
+frame_in_wrfout=mod(timestep-1,frames_per_wrfout-1)+1
+wrfout_seq_no=ceil(timestep/frames_per_wrfout)
 
 if generate,
 
@@ -179,8 +183,8 @@ if extract
                      case_names{case_num})
                 job_id = get_job_id(P,i,k)
                 wrf_dir = [wksp_dir,'/',job_id,'/wrf'];  
-                f0 = [wrf_dir,'/wrfout_d05_',case_output0{case_num}]
-                f1 = [wrf_dir,'/wrfout_d05_',case_output1{case_num}]
+                f0 = [wrf_dir,'/wrfout_d05_',case_output0{case_num,wrfout_seq_no}]
+                f1 = [wrf_dir,'/wrfout_d05_',case_output1{case_num,wrfout_seq_no}]
                 if exist(f0,'file') & exist(f1,'file')
                     f0,f1
                     error('Both files should not exist at the same time')
@@ -194,7 +198,7 @@ if extract
                     if extract > 1 & k==r_ext_start & i==1,
                         out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1)
                     end
-                    p=nc2struct(f,variables,{},timestep)
+                    p=nc2struct(f,variables,{},frame_in_wrfout)
                     out.ok(i,k)=1;
                     p.job_id=job_id;
                     out.p(i,k)=p;
