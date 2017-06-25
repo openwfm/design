@@ -6,17 +6,17 @@ template_dir = '/glade/p/work/jmandel/fasmee.git/janmandel/design/templates'
 wksp_dir = '/glade/u/home/jmandel/Projects/wrfxpy/wksp'
 template='_Fishlake_5d';
 
-generate=0
-clone=0
-submit=1
-fake=0
-extract=1
+generate=0 % only the first time
+clone=0    % 3 including everything
+submit=1   % 0
+fake=0     % 1=shell commands do not execute
+extract=1  % 1=only check for file, 2 = all
+timestep=24 % load timestep in the first wrfout file
 analysis=0
 
-r_start=131
-r_end=150
-r_max=1000
-r_ext=50 
+r_span=[70]  % span to clone
+r_max=1000      % 
+r_ext=200        % extracting 1:r_ext
 
 N=5
 case_names={
@@ -68,7 +68,7 @@ X = get_params_vec(P,D);
 
 if clone
 
-for k=r_start:r_end
+for k=r_span,
     
     for i = 1:N,
 
@@ -154,8 +154,14 @@ end  % i
 end  % for k
 end  % clone
 
+out.x=zeros(N,r_ext);
 
 if extract
+    if extract == 1,
+        variables = {'Times'};
+    else
+        variables={'FGRNHFX','W','PH','PHB','tr17_1','Times'};
+    end
     X=get_params_vec(P,D);
     % for ts=1
         for k=1:r_ext
@@ -171,19 +177,21 @@ if extract
                     wrfout = ['wrfout_d05_',case_output{case_num}]
                     f = [wksp_dir,'/',job_id,'/wrf/',wrfout];  
                 end
-                p=nc2struct(f,{'FGRNHFX','W','PH','PHB','tr17_1'},{})
-                p.job_id=job_id;
-                if k==1 & i==1,
-                    out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1)
+                try
+                    p=nc2struct(f,variables,{},timestep)
+                    out.x(i,k)=1;
+                    p.job_id=job_id;
+                    if extract > 1 & k==1 & i==1,
+                        out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1)
+                    end
+                    out.p(i,k)=p;
                 end
-                out.p(i,k)=p;
             end
         end
         out.X=X;
         out.P=P;
         out.D=D;
     % end
-    save -v7.3 out out
 end % extract
 
 if analysis,
