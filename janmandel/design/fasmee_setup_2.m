@@ -8,7 +8,7 @@ template='_Fishlake_5d';
 
 generate=0 % only the first time
 clone=0    % 3 including everything
-submit=1   % 0
+submit=1   % neens clone=3 or extract>0
 fake=0     % 1=shell commands do not execute
 extract=1  % 1=only check for file, 2 = all
 timestep=24 % load timestep in the first wrfout file
@@ -16,7 +16,8 @@ analysis=0
 
 r_span=[70]  % span to clone
 r_max=1000      % 
-r_ext=200        % extracting 1:r_ext
+r_ext_start = 83
+r_ext_end=200        % extracting r_ext_start:r_ext_end
 
 N=5
 case_names={
@@ -154,7 +155,8 @@ end  % i
 end  % for k
 end  % clone
 
-out.x=zeros(N,r_ext);
+out.ok=zeros(N,r_ext_end);
+out.started=zeros(N,r_ext_end);
 
 if extract
     if extract == 1,
@@ -164,7 +166,7 @@ if extract
     end
     X=get_params_vec(P,D);
     % for ts=1
-        for k=1:r_ext
+        for k=r_ext_start:r_ext_end
             for i=1:N
                 job_id = get_job_id(P,i,k);
                 case_num = X(7,i,k)
@@ -172,19 +174,24 @@ if extract
                      case_names{case_num})
                 job_id = get_job_id(P,i,k)
                 wrfout = ['wrfout_d05_',case_restart{case_num}]
-                f = [wksp_dir,'/',job_id,'/wrf/',wrfout];  
+                wrf_dir = [wksp_dir,'/',job_id,'/wrf/'];  
+                f = [wrf_dir,wrfout];  
                 if ~exist(f,'file')
                     wrfout = ['wrfout_d05_',case_output{case_num}]
-                    f = [wksp_dir,'/',job_id,'/wrf/',wrfout];  
+                    f = [wrf_dir,wrfout];  
                 end
                 try
                     p=nc2struct(f,variables,{},timestep)
-                    out.x(i,k)=1;
+                    out.ok(i,k)=1;
                     p.job_id=job_id;
                     if extract > 1 & k==1 & i==1,
                         out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1)
                     end
                     out.p(i,k)=p;
+                catch
+                    if submit
+                        shell(['cd ',wrf_dir,'; qsub -q economy runwrf_cheyenne.pbs; sleep 5']) 
+                    end
                 end
             end
         end
