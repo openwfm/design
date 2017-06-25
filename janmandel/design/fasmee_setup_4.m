@@ -8,16 +8,16 @@ template='_Fishlake_5d';
 
 generate=0 % only the first time
 clone=0    % 3 including everything
-submit=0   % neens clone=3 or extract>0
-fake=0     % 1=shell commands do not execute
-extract=2  % 1=only check for file, 2 = all
+submit=0   % needs clone=3 or extract>0
+fake=1     % 1=shell commands do not execute
+extract=1  % 1=only Times, 2 = all specificed variables
 timestep=24 % load timestep in the first wrfout file
 analysis=0
 
-r_span=[70]  % span to clone
+r_span=[151]  % span to clone
 r_max=1000      % 
 r_ext_start = 1 
-r_ext_end=70        % extracting r_ext_start:r_ext_end
+r_ext_end=200        % extracting r_ext_start:r_ext_end
 submit_delay=150
 
 N=5
@@ -28,20 +28,21 @@ case_names={
 'Fishlake_5d_09262015',
 'Fishlake_5d_09272015'
 }
-case_restart={
+case_output0={
 '2014-09-03_16:30:00',
 '2016-09-11_16:30:00',
 '2012-09-22_16:30:00',
 '2015-09-26_16:30:00',
 '2015-09-27_16:30:00'
 }
-case_output={
+case_output1={
 '2014-09-03_16:30:01',
 '2016-09-11_16:30:01',
 '2012-09-22_16:30:01',
 '2015-09-26_16:30:01',
 '2015-09-27_16:30:01'
 }
+case_restart=case_output0(:,1);
 
 if generate,
 
@@ -67,6 +68,8 @@ end
 
 [L,N,r_max]=size(P);
 X = get_params_vec(P,D);
+
+out.started=zeros(N,r_ext_end);
 
 if clone
 
@@ -147,7 +150,8 @@ for k=r_span,
     ncreplace(wrf_f,'FMC_GC',fmc_gc);
 
     if submit,
-        shell(['cd ',wrf_dir,'; qsub -q economy runwrf_cheyenne.pbs'],fake)
+        [status,out.sub_job{i,k}]=shell(['cd ',wrf_dir,'; qsub -q economy runwrf_cheyenne.pbs'],fake)
+        out.started(i,k) = status==0;
     end
     end % clone > 2
     end % clone > 1
@@ -157,8 +161,8 @@ end  % for k
 end  % clone
 
 out.ok=zeros(N,r_ext_end);
-out.started=zeros(N,r_ext_end);
 
+out.bad_job={}
 if extract
     if extract == 1,
         variables = {'Times'};
@@ -174,12 +178,17 @@ if extract
                 fprintf('replicant %03i vector %i job_id %s case %s\n',k,i,job_id,...
                      case_names{case_num})
                 job_id = get_job_id(P,i,k)
-                wrfout = ['wrfout_d05_',case_restart{case_num}]
-                wrf_dir = [wksp_dir,'/',job_id,'/wrf/'];  
-                f = [wrf_dir,wrfout];  
-                if ~exist(f,'file')
-                    wrfout = ['wrfout_d05_',case_output{case_num}]
-                    f = [wrf_dir,wrfout];  
+                wrf_dir = [wksp_dir,'/',job_id,'/wrf'];  
+                f0 = [wrf_dir,'/wrfout_d05_',case_output0{case_num}]
+                f1 = [wrf_dir,'/wrfout_d05_',case_output1{case_num}]
+                if exist(f0,'file') & exist(f1,'file')
+                    f0,f1
+                    error('Both files should not exist at the same time')
+                end
+                if exist(f0,'file')
+                    f=f0;
+                else
+                    f=f1;
                 end
                 try
                     if extract > 1 & k==r_ext_start & i==1,
@@ -190,12 +199,16 @@ if extract
                     p.job_id=job_id;
                     out.p(i,k)=p;
                 catch
+                    out.bad_job={out.bad_job{:};job_id};
+                    out.ok(i,k)=0;
                     if submit
-                        shell(['cd ',wrf_dir,'; qsub -q economy runwrf_cheyenne.pbs; sleep ',num2str(submit_delay)],fake) 
+                        [status,out.sub_job{i,k}]=shell(['cd ',wrf_dir,'; qsub -q economy runwrf_cheyenne.pbs; sleep ',num2str(submit_delay)],fake) 
+                        out.started(i,k) = status==0;
                     end
                 end
             end
         end
+        disp([num2str(length(out.bad_job)),' files are missing timestep ',num2str(timestep)])
         out.X=X;
         out.P=P;
         out.D=D;

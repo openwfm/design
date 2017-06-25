@@ -1,14 +1,21 @@
-function shell(s,fake)
+function varargout=shell(s,fake)
+% [status[,result]]=shell(s[,fake])
+% 
 disp(s)
 if exist('fake','var') & fake,
-   disp('command not executed')
-   return
+    status=0;
+    result='fake, not executed';
+else
+    [status,result]=system(s);
 end
-[status,result]=system(s);
-if length(result)>0,
-   disp(result)
+disp(result)
+if status,
+    disp('command failed')
 end
-if status ~=0,
-    error('command failed')
+if nargout>=1,
+    varargout{1}=status;
+end
+if nargout>=2,
+    varargout{2}=result;
 end
 end
