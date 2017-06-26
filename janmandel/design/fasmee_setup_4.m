@@ -10,15 +10,15 @@ generate=0 % only the first time
 clone=0    % 3 including everything
 submit=0   % needs clone=3 or extract>0
 fake=1     % 1=shell commands do not execute
-extract=1  % 1=only Times, 2 = all specificed variables
-timestep=4*24 % load timestep in the wrfout files
+extract=2 % 1=only Times, 2 = all specificed variables
+timestep=24 % load timestep in the wrfout files
 frames_per_wrfout=24; 
 analysis=0
 
 r_span=[151]  % span to clone
 r_max=1000      % 
 r_ext_start = 1 
-r_ext_end=200        % extracting r_ext_start:r_ext_end
+r_ext_end=100        % extracting r_ext_start:r_ext_end
 submit_delay=150
 
 N=5
@@ -202,7 +202,7 @@ if extract
                 if isempty(err),
                     try
                         if extract > 1 & k==r_ext_start & i==1,
-                            out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1)
+                            out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1,out)
                         end
                         p=nc2struct(f,variables,{},out.frame_in_wrfout)
                         p.job_id=job_id;

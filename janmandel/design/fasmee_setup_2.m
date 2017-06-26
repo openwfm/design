@@ -8,16 +8,17 @@ template='_Fishlake_5d';
 
 generate=0 % only the first time
 clone=0    % 3 including everything
-submit=1   % neens clone=3 or extract>0
+submit=0   % needs clone=3 or extract>0
 fake=1     % 1=shell commands do not execute
-extract=1  % 1=only check for file, 2 = all
-timestep=1 % load timestep in the first wrfout file
+extract=2 % 1=only Times, 2 = all specificed variables
+timestep=24 % load timestep in the wrfout files
+frames_per_wrfout=24; 
 analysis=0
 
-r_span=[70]  % span to clone
+r_span=[151]  % span to clone
 r_max=1000      % 
 r_ext_start = 1 
-r_ext_end=200        % extracting r_ext_start:r_ext_end
+r_ext_end=100        % extracting r_ext_start:r_ext_end
 submit_delay=150
 
 N=5
@@ -28,20 +29,24 @@ case_names={
 'Fishlake_5d_09262015',
 'Fishlake_5d_09272015'
 }
-case_restart={
-'2014-09-03_16:30:00',
-'2016-09-11_16:30:00',
-'2012-09-22_16:30:00',
-'2015-09-26_16:30:00',
-'2015-09-27_16:30:00'
+case_output0={
+'2014-09-03_16:30:00','2014-09-03_18:30:00','2014-09-03_20:30:00','2014-09-03_22:30:00','2014-09-04_00:30:00',
+'2016-09-11_16:30:00','2016-09-11_18:30:00','2016-09-11_20:30:00','2016-09-11_22:30:00','2016-09-12_00:30:00',
+'2012-09-22_16:30:00','2012-09-22_18:30:00','2012-09-22_20:30:00','2012-09-22_22:30:00','2012-09-23_00:30:00',
+'2015-09-26_16:30:00','2015-09-26_18:30:00','2015-09-26_20:30:00','2015-09-26_22:30:00','2015-09-27_00:30:00',
+'2015-09-27_16:30:00','2015-09-27_18:30:00','2015-09-27_20:30:00','2015-09-27_22:30:00','2015-09-28_00:30:00',
 }
-case_output={
-'2014-09-03_16:30:01',
-'2016-09-11_16:30:01',
-'2012-09-22_16:30:01',
-'2015-09-26_16:30:01',
-'2015-09-27_16:30:01'
+case_output1={
+'2014-09-03_16:30:01','2014-09-03_18:30:01','2014-09-03_20:30:01','2014-09-03_22:30:01','2014-09-04_00:30:01',
+'2016-09-11_16:30:01','2016-09-11_18:30:01','2016-09-11_20:30:01','2016-09-11_22:30:01','2016-09-12_00:30:01',
+'2012-09-22_16:30:01','2012-09-22_18:30:01','2012-09-22_20:30:01','2012-09-22_22:30:01','2012-09-23_00:30:01',
+'2015-09-26_16:30:01','2015-09-26_18:30:01','2015-09-26_20:30:01','2015-09-26_22:30:01','2015-09-27_00:30:01',
+'2015-09-27_16:30:01','2015-09-27_18:30:01','2015-09-27_20:30:01','2015-09-27_22:30:01','2015-09-28_00:30:01',
 }
+case_restart=case_output0(:,1);
+
+out.frame_in_wrfout=mod(timestep-1,frames_per_wrfout)+1
+out.wrfout_seq_no=ceil(timestep/frames_per_wrfout)
 
 if generate,
 
@@ -67,6 +72,8 @@ end
 
 [L,N,r_max]=size(P);
 X = get_params_vec(P,D);
+
+out.started=zeros(N,r_ext_end);
 
 if clone
 
@@ -147,7 +154,8 @@ for k=r_span,
     ncreplace(wrf_f,'FMC_GC',fmc_gc);
 
     if submit,
-        shell(['cd ',wrf_dir,'; qsub -q economy runwrf_cheyenne.pbs'],fake)
+        [status,out.sub_job{i,k}]=shell(['cd ',wrf_dir,'; qsub -q economy runwrf_cheyenne.pbs'],fake)
+        out.started(i,k) = status==0;
     end
     end % clone > 2
     end % clone > 1
@@ -157,7 +165,8 @@ end  % for k
 end  % clone
 
 out.ok=zeros(N,r_ext_end);
-out.started=zeros(N,r_ext_end);
+out.bad_job={};
+out.bad_err={};
 
 if extract
     if extract == 1,
@@ -174,28 +183,53 @@ if extract
                 fprintf('replicant %03i vector %i job_id %s case %s\n',k,i,job_id,...
                      case_names{case_num})
                 job_id = get_job_id(P,i,k)
-                wrfout = ['wrfout_d05_',case_restart{case_num}]
-                wrf_dir = [wksp_dir,'/',job_id,'/wrf/'];  
-                f = [wrf_dir,wrfout];  
-                if ~exist(f,'file')
-                    wrfout = ['wrfout_d05_',case_output{case_num}]
-                    f = [wrf_dir,wrfout];  
+                wrf_dir = [wksp_dir,'/',job_id,'/wrf'];  
+                f0 = [wrf_dir,'/wrfout_d05_',case_output0{case_num,out.wrfout_seq_no}]
+                f1 = [wrf_dir,'/wrfout_d05_',case_output1{case_num,out.wrfout_seq_no}]
+                err='';
+                if exist(f0,'file') & exist(f1,'file')
+                    f0,f1
+                    err='both wrfout and offset by 1sec exists';
+                else
+                    if exist(f0,'file')
+                        f=f0;
+                    elseif exist(f1,'file')
+                        f=f1;
+                    else
+                        err='wrfout does not exist';
+                    end
                 end
-                try
-                    p=nc2struct(f,variables,{},timestep)
-                    out.ok(i,k)=1;
-                    p.job_id=job_id;
-                    if extract > 1 & k==1 & i==1,
-                        out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1)
+                if isempty(err),
+                    try
+                        if extract > 1 & k==r_ext_start & i==1,
+                            out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1,out)
+                        end
+                        p=nc2struct(f,variables,{},out.frame_in_wrfout)
+                        p.job_id=job_id;
+                        out.p(i,k)=p;
+                    catch
+                        err='frame does not exist';
                     end
-                    out.p(i,k)=p;
-                catch
+                end
+                out.err{i,k}=err;
+                switch err
+                case {'wrfout does not exist','frame does not exist'}
                     if submit
-                        shell(['cd ',wrf_dir,'; qsub -q economy runwrf_cheyenne.pbs; sleep ',num2str(submit_delay)],fake) 
+                       [status,out.sub_job{i,k}]=shell(['cd ',wrf_dir,'; qsub -q economy runwrf_cheyenne.pbs; sleep ',num2str(submit_delay)],fake) 
+                       out.started(i,k) = status==0;
+                       out.ok(i,k)=0;
                     end
+                end
+                if isempty(err) 
+                    out.ok(i,k)=1;
+                else 
+                    nbad=length(out.bad_job); 
+                    out.bad_job{nbad+1}=job_id;
+                    out.bad_err{nbad+1}=err;
                 end
             end
         end
+        disp([num2str(length(out.bad_job)),' files are missing timestep ',num2str(timestep)])
         out.X=X;
         out.P=P;
         out.D=D;
