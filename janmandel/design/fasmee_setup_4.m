@@ -11,7 +11,7 @@ clone=0    % 3 including everything
 submit=0   % needs clone=3 or extract>0
 fake=1     % 1=shell commands do not execute
 extract=1  % 1=only Times, 2 = all specificed variables
-timestep=48 % load timestep in the first wrfout file
+timestep=4*24 % load timestep in the wrfout files
 frames_per_wrfout=24; 
 analysis=0
 
@@ -45,8 +45,8 @@ case_output1={
 }
 case_restart=case_output0(:,1);
 
-frame_in_wrfout=mod(timestep-1,frames_per_wrfout-1)+1
-wrfout_seq_no=ceil(timestep/frames_per_wrfout)
+out.frame_in_wrfout=mod(timestep-1,frames_per_wrfout)+1
+out.wrfout_seq_no=ceil(timestep/frames_per_wrfout)
 
 if generate,
 
@@ -165,8 +165,9 @@ end  % for k
 end  % clone
 
 out.ok=zeros(N,r_ext_end);
+out.bad_job={};
+out.bad_err={};
 
-out.bad_job={}
 if extract
     if extract == 1,
         variables = {'Times'};
@@ -183,32 +184,48 @@ if extract
                      case_names{case_num})
                 job_id = get_job_id(P,i,k)
                 wrf_dir = [wksp_dir,'/',job_id,'/wrf'];  
-                f0 = [wrf_dir,'/wrfout_d05_',case_output0{case_num,wrfout_seq_no}]
-                f1 = [wrf_dir,'/wrfout_d05_',case_output1{case_num,wrfout_seq_no}]
+                f0 = [wrf_dir,'/wrfout_d05_',case_output0{case_num,out.wrfout_seq_no}]
+                f1 = [wrf_dir,'/wrfout_d05_',case_output1{case_num,out.wrfout_seq_no}]
+                err='';
                 if exist(f0,'file') & exist(f1,'file')
                     f0,f1
-                    error('Both files should not exist at the same time')
-                end
-                if exist(f0,'file')
-                    f=f0;
+                    err='both wrfout and offset by 1sec exists';
                 else
-                    f=f1;
+                    if exist(f0,'file')
+                        f=f0;
+                    elseif exist(f1,'file')
+                        f=f1;
+                    else
+                        err='wrfout does not exist';
+                    end
                 end
-                try
-                    if extract > 1 & k==r_ext_start & i==1,
-                        out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1)
+                if isempty(err),
+                    try
+                        if extract > 1 & k==r_ext_start & i==1,
+                            out=nc2struct(f,{'XLONG','XLAT','FXLONG','FXLAT','HGT'},{},1)
+                        end
+                        p=nc2struct(f,variables,{},out.frame_in_wrfout)
+                        p.job_id=job_id;
+                        out.p(i,k)=p;
+                    catch
+                        err='frame does not exist';
                     end
-                    p=nc2struct(f,variables,{},frame_in_wrfout)
-                    out.ok(i,k)=1;
-                    p.job_id=job_id;
-                    out.p(i,k)=p;
-                catch
-                    out.bad_job={out.bad_job{:};job_id};
-                    out.ok(i,k)=0;
+                end
+                out.err{i,k}=err;
+                switch err
+                case {'wrfout does not exist','frame does not exist'}
                     if submit
-                        [status,out.sub_job{i,k}]=shell(['cd ',wrf_dir,'; qsub -q economy runwrf_cheyenne.pbs; sleep ',num2str(submit_delay)],fake) 
-                        out.started(i,k) = status==0;
+                       [status,out.sub_job{i,k}]=shell(['cd ',wrf_dir,'; qsub -q economy runwrf_cheyenne.pbs; sleep ',num2str(submit_delay)],fake) 
+                       out.started(i,k) = status==0;
+                       out.ok(i,k)=0;
                     end
+                end
+                if isempty(err) 
+                    out.ok(i,k)=1;
+                else 
+                    nbad=length(out.bad_job); 
+                    out.bad_job{nbad+1}=job_id;
+                    out.bad_err{nbad+1}=err;
                 end
             end
         end
