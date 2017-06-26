@@ -1,4 +1,4 @@
-function out=fasmee_setup(out)
+function out=fasmee_setup(out,timestep)
 format compact
 root_dir='/glade2/scratch2/jmandel/wrf-fire_cheyenne/wrfv2_fire/test'
 case_dir='/glade2/scratch2/jmandel/wrf-fire_cheyenne/wrfv2_fire/test'
@@ -11,7 +11,9 @@ clone=0    % 3 including everything
 submit=0   % needs clone=3 or extract>0
 fake=1     % 1=shell commands do not execute
 extract=2 % 1=only Times, 2 = all specificed variables
-timestep=24 % load timestep in the wrfout files
+if ~exist('timestep','var'),
+	timestep=24 % load timestep in the wrfout files
+end
 frames_per_wrfout=24; 
 analysis=0
 
@@ -172,7 +174,7 @@ if extract
     if extract == 1,
         variables = {'Times'};
     else
-        variables={'FGRNHFX','W','PH','PHB','tr17_1','Times'};
+        variables={'FGRNHFX','TIGN_G','FIRE_AREA','U','V','W','P','PB','T','T2','PH','PHB','tr17_1','Times'};
     end
     X=get_params_vec(P,D);
     % for ts=1
