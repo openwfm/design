@@ -231,6 +231,7 @@ if extract
                 end
             end
         end
+        out.timestep=timestep;
         disp([num2str(length(out.bad_job)),' files are missing timestep ',num2str(timestep)])
         out.X=X;
         out.P=P;
