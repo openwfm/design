@@ -82,9 +82,9 @@ for l=r;          % to get the results
     yvar=var(y2,0,2);
     eff=V ./ (yvar * ones(1,L)+realmin); % avoid division by zero    
     fprintf('%3i repeats ',l)
-    fprintf('var at points %g max %g avg',max(yvar),mean(yvar))
+    fprintf('variance max %g avg %g',max(yvar),mean(yvar))
     for i=1:L
-        fprintf(' param %3i: max %g avg %g',i,max(eff(:,i)),mean(eff(:,i)))
+        fprintf(' effect of param %3i: max %g avg %g',i,max(eff(:,i)),mean(eff(:,i)))
     end
     fprintf('\n')
 end
