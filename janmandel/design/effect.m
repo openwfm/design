@@ -1,8 +1,8 @@
 function [varargout]=effect(X,Y)
 % V = effect(X,Y)
-% [V,mean_all] = effect(X,Y)
-% [V,mean_all,var_all] = effect(X,Y)
-% [V,mean_all,var_all,eff] = effect(X,Y)
+% [V,ymean] = effect(X,Y)
+% [V,ymean,yvar] = effect(X,Y)
+% [V,ymean,yvar,eff] = effect(X,Y)
 %
 % Evaluating effect of parameters from repeated Latin Hypercube Sampling
 %
@@ -14,9 +14,12 @@ function [varargout]=effect(X,Y)
 %
 % Output
 %   V           V(:,i) is the variance in Y due to parameter i 
-%   mean_all    mean of Y over all inputs
-%   var_all     variance of Y over all inputs
+%   ymean       mean of Y over all inputs
+%   yvar        variance of Y over all inputs
 %               in general this does not equal to sum of V only for linear model
+%   eff         eff(:,i) is the sensitivity coefficient of parameter i
+%               which equals V scaled by yvar (same as scaled to one
+%               in the case of linear input-output relation)
 %
 % Reference: Andrea Saltelli, Stefano Tarantola, Francesca Campolongo
 % and Marco Ratto, Sensitivity Analysis in Practice, John Wiley 2004
@@ -58,7 +61,8 @@ end
 % cmean(:,i,j) = mean of y over repetitions conditional on X(i) in j-th bin
 
 % disp('conditional mean')
-for l=1:r
+% for l=1:r         % to watch convergence
+for l=r;          % to get the results
     cmean = mean(y(:,:,:,1:l),4);
     % disp('checking')
     %for i=1:L
