@@ -15,7 +15,7 @@ if ~exist('timestep','var'),
 	timestep=24 % load timestep in the wrfout files
 end
 frames_per_wrfout=24; 
-analysis=1
+analysis=2
 
 r_span=[151]  % span to clone
 r_max=1000      % 
@@ -167,11 +167,11 @@ end  % i
 end  % for k
 end  % clone
 
-out.ok=zeros(N,r_ext_end);
-out.bad_job={};
-out.bad_err={};
-
 if extract
+    out.ok=zeros(N,r_ext_end);
+    out.bad_job={};
+    out.bad_err={};
+
     if extract == 1,
         variables = {'Times'};
     else
@@ -245,25 +245,35 @@ if analysis,
         if ~exist('out','var')
             disp('variable out not given, loading from file')
             load out
-            X=out.X;
-            P=out.P;
         end    
+        failed_rep=(any(out.ok==0,1));
+        if any(failed_rep),
+            disp(['deleting failed replicants ',num2str(find(failed_rep))])            
+            out.p(:,failed_rep)=[];
+            out.X(:,:,failed_rep)=[];
+            out.P(:,:,failed_rep)=[];
+        end
+        X=out.X;
+        P=out.P;
         r_analysis_end=min(r_analysis_end,size(out.p,2));
         disp('adding plume height')
+end
+if analysis>1,
+        X=X(:,:,1:r_analysis_end);
+        P=P(:,:,1:r_analysis_end);
+
+        % add and analyze plume height
         for k=1:r_analysis_end
             for i=1:N
                 out.p(i,k).plume_height=plume_height(out.p(i,k));
             end
         end
-end
-if analysis>1,
-        X=X(:,:,1:r_analysis_end);
-        P=P(:,:,1:r_analysis_end);
         out.plume_height=effectnd(X,out.p,'plume_height');
+        
+        % ground heat flux
         out.fgrnhfx=effectnd(X,out.p,'fgrnhfx');
                  
-        for h=[200:200:600]  % heights above the terrain
-
+        for h=[10,20,50,100,200:200:1600,2000:400:3200]  % heights above the terrain
             w=['w',num2str(h)];
             for k=1:r_analysis_end
                 for i=1:N
@@ -272,7 +282,8 @@ if analysis>1,
             end
             out.(w)=effectnd(X,out.p,w);
         end
-        for h=[400:200:1600]
+        % for h=[400:200:1600]
+        for h=[10,20,50,100,200:200:1600,2000:400:3200]
             s=['smoke',num2str(h)];
             for k=1:r_analysis_end
                 for i=1:N
