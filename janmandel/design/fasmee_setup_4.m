@@ -10,18 +10,19 @@ generate=0 % only the first time
 clone=0    % 3 including everything
 submit=0   % needs clone=3 or extract>0
 fake=1     % 1=shell commands do not execute
-extract=2 % 1=only Times, 2 = all specificed variables
+extract=0 % 1=only Times, 2 = all specificed variables
 if ~exist('timestep','var'),
 	timestep=24 % load timestep in the wrfout files
 end
 frames_per_wrfout=24; 
-analysis=0
+analysis=1
 
 r_span=[151]  % span to clone
 r_max=1000      % 
 r_ext_start = 1 
 r_ext_end=100        % extracting r_ext_start:r_ext_end
 submit_delay=150
+r_analysis_end=200
 
 N=5
 case_names={
@@ -239,28 +240,51 @@ if extract
     % end
 end % extract
 
+
 if analysis,
-    if ~exist('out','var')
-        disp('variable out not given, loading from file')
-        load out
-    end
+        if ~exist('out','var')
+            disp('variable out not given, loading from file')
+            load out
+            X=out.X;
+            P=out.P;
+        end    
+        r_analysis_end=min(r_analysis_end,size(out.p,2));
+        disp('adding plume height')
+        for k=1:r_analysis_end
+            for i=1:N
+                out.p(i,k).plume_height=plume_height(out.p(i,k));
+            end
+        end
+end
+if analysis>1,
+        X=X(:,:,1:r_analysis_end);
+        P=P(:,:,1:r_analysis_end);
+        out.plume_height=effectnd(X,out.p,'plume_height');
         out.fgrnhfx=effectnd(X,out.p,'fgrnhfx');
-        for h=[5,10,20,30]  % height above the terrain
+                 
+        for h=[200:200:600]  % heights above the terrain
+
             w=['w',num2str(h)];
-            s=['smoke',num2str(h)];
-            for k=1:r_end
+            for k=1:r_analysis_end
                 for i=1:N
                     out.p(i,k).(w)=interpw2height(out.p(i,k),'w',h,'terrain');
-                    out.p(i,k).(s)=interpw2height(out.p(i,k),'tr17_1',h,'terrain');
                 end
             end
             out.(w)=effectnd(X,out.p,w);
+        end
+        for h=[400:200:1600]
+            s=['smoke',num2str(h)];
+            for k=1:r_analysis_end
+                for i=1:N
+                    out.p(i,k).(s)=interpw2height(out.p(i,k),'tr17_1',h,'terrain');
+                end
+            end
             out.(s)=effectnd(X,out.p,s);
         end
-        for h=[2000:500:5000];   % altitude above the sea level
+        for h=[4000];   % altitude above the sea level
             w=['w',num2str(h),'a'];
             s=['smoke',num2str(h),'a'];
-            for k=1:r_end
+            for k=1:r_analysis_end
                 for i=1:N
                     out.p(i,k).(w)=interpw2height(out.p(i,k),'w',h,'sea');
                     out.p(i,k).(s)=interpw2height(out.p(i,k),'tr17_1',h,'sea');
