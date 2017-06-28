@@ -80,7 +80,7 @@ for l=r;          % to get the results
     % V = mean((cmean-ymean*ones(1,N)).^2,2);
     y2 = reshape(Y(:,:,1:l),[dim,N*l]);
     yvar=var(y2,0,2);
-    eff=V ./ (yvar * ones(1,L));     
+    eff=V ./ (yvar * ones(1,L)+realmin); % avoid division by zero    
     fprintf('%3i repeats ',l)
     fprintf('var at points %g max %g avg',max(yvar),mean(yvar))
     for i=1:L
