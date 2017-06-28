@@ -20,7 +20,7 @@ analysis=0
 r_span=[151]  % span to clone
 r_max=1000      % 
 r_ext_start = 1 
-r_ext_end=100        % extracting r_ext_start:r_ext_end
+r_ext_end=200        % extracting r_ext_start:r_ext_end
 submit_delay=150
 
 N=5
