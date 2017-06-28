@@ -10,7 +10,9 @@
 % ensemble mean, m.
 %
 
-% Author: Aimé Fournier
+% Author:               Aime' Fournier
+% Project Title:        Modeling support for FASMEE experimental design using WRF-SFIRE-CHEM
+% JFSP project number:  16-4-05-3
 
  if ~isstruct(x)
     error('1st argument must be an array of structures')

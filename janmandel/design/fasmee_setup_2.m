@@ -1,4 +1,4 @@
-function out=fasmee_setup(out)
+function out=fasmee_setup(out,timestep)
 format compact
 root_dir='/glade2/scratch2/jmandel/wrf-fire_cheyenne/wrfv2_fire/test'
 case_dir='/glade2/scratch2/jmandel/wrf-fire_cheyenne/wrfv2_fire/test'
@@ -10,16 +10,19 @@ generate=0 % only the first time
 clone=0    % 3 including everything
 submit=0   % needs clone=3 or extract>0
 fake=1     % 1=shell commands do not execute
-extract=2 % 1=only Times, 2 = all specificed variables
-timestep=24 % load timestep in the wrfout files
+extract=0 % 1=only Times, 2 = all specificed variables
+if ~exist('timestep','var'),
+	timestep=24 % load timestep in the wrfout files
+end
 frames_per_wrfout=24; 
-analysis=0
+analysis=1
 
 r_span=[151]  % span to clone
 r_max=1000      % 
 r_ext_start = 1 
 r_ext_end=100        % extracting r_ext_start:r_ext_end
 submit_delay=150
+r_an_end=100
 
 N=5
 case_names={
@@ -172,7 +175,7 @@ if extract
     if extract == 1,
         variables = {'Times'};
     else
-        variables={'FGRNHFX','W','PH','PHB','tr17_1','Times'};
+        variables={'FGRNHFX','TIGN_G','FIRE_AREA','U','V','W','P','PB','T','T2','PH','PHB','tr17_1','Times'};
     end
     X=get_params_vec(P,D);
     % for ts=1
@@ -241,11 +244,13 @@ if analysis,
         disp('variable out not given, loading from file')
         load out
     end
+    X=X(:,:,1:r_an_end);
+    P=P(:,:,1:r_an_end);
         out.fgrnhfx=effectnd(X,out.p,'fgrnhfx');
         for h=[5,10,20,30]  % height above the terrain
             w=['w',num2str(h)];
             s=['smoke',num2str(h)];
-            for k=1:r_end
+            for k=1:r_an_end
                 for i=1:N
                     out.p(i,k).(w)=interpw2height(out.p(i,k),'w',h,'terrain');
                     out.p(i,k).(s)=interpw2height(out.p(i,k),'tr17_1',h,'terrain');
@@ -257,7 +262,7 @@ if analysis,
         for h=[2000:500:5000];   % altitude above the sea level
             w=['w',num2str(h),'a'];
             s=['smoke',num2str(h),'a'];
-            for k=1:r_end
+            for k=1:r_an_end
                 for i=1:N
                     out.p(i,k).(w)=interpw2height(out.p(i,k),'w',h,'sea');
                     out.p(i,k).(s)=interpw2height(out.p(i,k),'tr17_1',h,'sea');
