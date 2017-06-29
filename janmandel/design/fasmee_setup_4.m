@@ -15,7 +15,7 @@ if ~exist('timestep','var'),
 	timestep=24 % load timestep in the wrfout files
 end
 frames_per_wrfout=24; 
-analysis=1  % 1=add plume height; 2=stats
+analysis=2  % 1=add plume height; 2=stats
 
 r_span=[151]  % span to clone
 r_max=1000      % 
@@ -261,18 +261,17 @@ if analysis,
         X=X(:,:,1:r_analysis_end);
         P=P(:,:,1:r_analysis_end);
 
-        % add and analyze plume height
+        % add plume height
         for k=1:r_analysis_end
             for i=1:N
                 out.p(i,k).plume_height=plume_height(out.p(i,k));
             end
         end
-        out.plume_height=effectnd(X,out.p,'plume_height');
 end
 if analysis>1,
         
-        % ground heat flux
-        out.fgrnhfx=effectnd(X,out.p,'fgrnhfx');
+        out.plume_height=effectnd(X,out.p,'plume_height'); 
+        out.fgrnhfx=effectnd(X,out.p,'fgrnhfx'); % ground heat flux
                  
         for h=[10,20,50,100,200:200:1600,2000:400:3200]  % heights above the terrain
             w=['w',num2str(h)];
