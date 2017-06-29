@@ -1,6 +1,7 @@
 % Author:               Aime' Fournier
 % Project Title:        Modeling support for FASMEE experimental design using WRF-SFIRE-CHEM
 % JFSP project number:  16-4-05-3
+% File:		        analXls_figs.m
 
  cm = gray(max(arrayfun(@(x)x.nWin, sta)) + 2);
  cm(end,:) = [];			% don't use white color
