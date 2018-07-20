@@ -12,6 +12,8 @@
 % Author:               Aime' Fournier
 % Project Title:        Modeling support for FASMEE experimental design using WRF-SFIRE-CHEM
 % JFSP project number:  16-4-05-3
+% File:		        covEllip.m
+%
  if nargin < 4
     n = 32;
  end
