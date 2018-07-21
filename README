@@ -1,11 +1,24 @@
-This is repository of software and some data for the experimental wildland burn design 
+This is repository of software and some data for the experimental wildland burn design
 
-For Matlab software to compute the typical day, see aimefournier/matlab/ 
-For repeated Latin Hypercube sampling, see janmandel/design/  
-   The convergence in eq. (1) can be observed by running effect_test.m 
+For Matlab software to compute the typical day, see aimefournier/matlab/
+
+For repeated Latin Hypercube sampling, see janmandel/design/
+
+   The convergence in eq. (1) can be observed by running effect_test.m
 
 References
 
-[1] Adam K. Kochanski, Aimé Fournier, Jan Mandel: Experimental Design of a Prescribed Burn Instrumentation
-arXiv:1806.06460, Atmosphere, in review.
+[1] Adam K. Kochanski, Aimé Fournier, Jan Mandel: Experimental Design of a Prescribed Burn
+Instrumentation arXiv:1806.06460, Atmosphere, in review.
 
+Acknowledgments
+
+This research was sponsored in part by the Joint Fire Science Program under grant JFSP 16-4-5-03 as
+a part of the Fire and Smoke Model Evaluation Experiment (FASMEE) Phase I, National Science
+Foundation grants DMS-1216481, ICER-1664175, and the NASA grant NNX13AH59G to Colorado State
+University, Sher Schranz, PI, CIRA in affiliation with NOAA/ESRL.
+
+High-performance computing support was provided by Yellowstone (ark:/85065/d7wd3xhc) and Cheyenne
+(doi:10.5065/D6RX99HX) at NCAR’s Computational and Information Systems Laboratory, sponsored by the
+National Science Foundation, the University of Utah Center for High Performance Computing and the
+Center for Computational Mathematics, University of Colorado Denver.
