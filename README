@@ -9,7 +9,12 @@ For repeated Latin Hypercube sampling, see janmandel/design/
 References
 
 [1] Adam K. Kochanski, Aimé Fournier, Jan Mandel: Experimental Design of a Prescribed Burn
-Instrumentation arXiv:1806.06460, Atmosphere, in review.
+Instrumentation Atmosphere, in review.
+https://arxiv.org/abs/1806.06460 
+
+[2] A Kochanski, J Mandel, A Fournier & MA Jenkins, “Modeling support for FASMEE experimental design using WRF-SFIRE- CHEM”, 
+Final Report of JFSP Project 16-4-05-3 (2017), 
+https://www.firescience.gov/projects/16-4-05-3/project/16-4-05-3_final_report.pdf
 
 Acknowledgments
 
